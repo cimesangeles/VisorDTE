@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "VisorDTE (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "VisorDTE (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
