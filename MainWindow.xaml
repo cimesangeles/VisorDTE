@@ -6,56 +6,111 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:views="using:VisorDTE.Views"
     xmlns:viewmodels="using:VisorDTE.ViewModels"
-    mc:Ignorable="d">
+    xmlns:models="using:VisorDTE.Models"
+    mc:Ignorable="d"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+    xmlns:converters="using:VisorDTE.Converters"
+    xmlns:toolkit="using:CommunityToolkit.WinUI.UI.Controls">
 
-    <Grid x:Name="RootGrid" DataContext="{x:Bind ViewModel}">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+    <Grid x:Name="RootGrid">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition x:Name="MainContentColumn" Width="*"/>
+            <ColumnDefinition Width="{Binding IsInspectorVisible, Converter={StaticResource BooleanToGridLengthConverter}, ConverterParameter='Auto'}"/>
+            <ColumnDefinition x:Name="InspectorColumn" Width="{Binding IsInspectorVisible, Converter={StaticResource BooleanToGridLengthConverter}, ConverterParameter='1*'}"/>
+        </Grid.ColumnDefinitions>
 
-        <CommandBar Grid.Row="0" DefaultLabelPosition="Right" Background="Transparent">
-            <AppBarButton Icon="OpenFile" Label="Abrir DTE" Command="{Binding OpenFilesCommand}"/>
-            <AppBarButton Icon="Save" Label="Exportar a PDF" Command="{Binding ExportToPdfCommand}"/>
-            <CommandBar.Content>
-                <AutoSuggestBox QueryIcon="Find" PlaceholderText="Buscar por Número de Control..." 
-                                Text="{Binding SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                VerticalAlignment="Center"
-                                MinWidth="300"/>
-            </CommandBar.Content>
-        </CommandBar>
-
-        <TabView Grid.Row="1" Margin="0,-1,0,0">
-            <TabView.TabItems>
-                <TabViewItem Header="Vista por Página">
-                    <FlipView ItemsSource="{Binding DteViewModels}"
-                              PointerWheelChanged="FlipView_PointerWheelChanged">
-                        <FlipView.ItemTemplate>
-                            <DataTemplate x:DataType="viewmodels:DteViewModel">
-                                <ScrollViewer VerticalScrollBarVisibility="Auto" 
-                                              HorizontalScrollBarVisibility="Auto"
-                                              ZoomMode="Enabled" MinZoomFactor="0.2">
-                                    <views:DteView HorizontalAlignment="Center" VerticalAlignment="Top"/>
-                                </ScrollViewer>
-                            </DataTemplate>
-                        </FlipView.ItemTemplate>
-                    </FlipView>
-                </TabViewItem>
-                <TabViewItem Header="Documento Completo">
-                    <ListView ItemsSource="{Binding DteViewModels}" SelectionMode="None">
-                        <ListView.ItemTemplate>
-                            <DataTemplate x:DataType="viewmodels:DteViewModel">
-                                <views:DteView/>
-                            </DataTemplate>
-                        </ListView.ItemTemplate>
-                    </ListView>
-                </TabViewItem>
-            </TabView.TabItems>
-        </TabView>
-
-        <Grid Grid.Row="2" Padding="12,8" ColumnDefinitions="*,Auto" Background="{ThemeResource SystemControlBackgroundBaseLowBrush}">
-            <TextBlock Grid.Column="0" Text="{Binding StatusText}" VerticalAlignment="Center" Foreground="Gray"/>
+        <Grid Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="12" Margin="12,8,12,0" Background="#3498db">
+                <Border BorderBrush="Black" BorderThickness="1" CornerRadius="5" Margin="12">
+                    <Image Source="ms-appx:///Assets/StoreLogo.scale-100.png" Height="48" Width="48" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock x:Name="HeaderTitleTextBlock" Foreground="White" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center"/>
+            </StackPanel>
+            <CommandBar Grid.Row="1" DefaultLabelPosition="Right" Background="Transparent">
+                <AppBarButton Icon="OpenFile" Label="Abrir DTE" Command="{Binding OpenFilesCommand}"/>
+                <AppBarButton Icon="Save" Label="Exportar a PDF" Command="{Binding ExportToPdfCommand}"/>
+                <AppBarSeparator/>
+                <AppBarButton Icon="PreviewLink" Label="{Binding ToggleInspectorLabel}" Command="{Binding ToggleInspectorCommand}"/>
+                <CommandBar.SecondaryCommands>
+                    <AppBarButton Icon="Help" Label="Acerca de..." Command="{Binding ShowAboutDialogCommand}"/>
+                </CommandBar.SecondaryCommands>
+                <CommandBar.Content>
+                    <AutoSuggestBox QueryIcon="Find" PlaceholderText="Buscar por Número de Control..." Text="{Binding SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" MinWidth="300"/>
+                </CommandBar.Content>
+            </CommandBar>
+            <muxc:TabView Grid.Row="2" Margin="0,-1,0,0">
+                <muxc:TabView.TabItems>
+                    <muxc:TabViewItem Header="Vista por Página">
+                        <FlipView ItemsSource="{Binding DteViewModels}" SelectedItem="{Binding SelectedDte, Mode=TwoWay}" PointerWheelChanged="FlipView_PointerWheelChanged">
+                            <FlipView.ItemTemplate>
+                                <DataTemplate>
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" ZoomMode="Enabled" MinZoomFactor="0.2">
+                                        <views:DteView HorizontalAlignment="Center" VerticalAlignment="Top"/>
+                                    </ScrollViewer>
+                                </DataTemplate>
+                            </FlipView.ItemTemplate>
+                        </FlipView>
+                    </muxc:TabViewItem>
+                    <muxc:TabViewItem Header="Documento Completo">
+                        <ListView ItemsSource="{Binding DteViewModels}" SelectionMode="Single" SelectionChanged="ListView_SelectionChanged">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <views:DteView/>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </muxc:TabViewItem>
+                </muxc:TabView.TabItems>
+            </muxc:TabView>
+            <Grid Grid.Row="3" Padding="12,8" ColumnDefinitions="*,Auto" Background="{ThemeResource SystemControlBackgroundBaseLowBrush}">
+                <TextBlock Grid.Column="0" Text="{Binding StatusText}" VerticalAlignment="Center" Foreground="Gray"/>
+            </Grid>
         </Grid>
+
+        <toolkit:GridSplitter Grid.Column="1" Width="8" ResizeBehavior="BasedOnAlignment"
+                              ResizeDirection="Auto" Background="Transparent"
+                              HorizontalAlignment="Center"/>
+
+        <Border Grid.Column="2" x:Name="JsonViewerPanel" Background="{ThemeResource SystemControlBackgroundBaseLowBrush}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="12,12,12,0">
+                    <TextBlock Grid.Column="0" Text="Inspector de Propiedades" FontWeight="Bold" VerticalAlignment="Center"/>
+                    <Button Grid.Column="1" Command="{Binding ToggleInspectorCommand}" Background="Transparent" BorderThickness="0" Padding="8">
+                        <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE8BB;" FontSize="12"/>
+                    </Button>
+                </Grid>
+
+                <ScrollViewer Grid.Row="1" Margin="0,12,0,0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                    <muxc:TreeView ItemsSource="{Binding JsonTreeNodes}" Loaded="TreeView_Loaded">
+                        <muxc:TreeView.ItemTemplate>
+                            <DataTemplate>
+                                <muxc:TreeViewItem ItemsSource="{Binding Children}" IsExpanded="True">
+                                    <Grid ColumnDefinitions="Auto,Auto,*" VerticalAlignment="Center">
+                                        <Button Grid.Column="0"
+                                                Style="{StaticResource CopyButtonStyle}"
+                                                Command="{Binding CopyCommand}"
+                                                CommandParameter="{Binding Value}"
+                                                Visibility="{Binding Value, Converter={StaticResource NullToVisibilityConverter}}"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding PropertyName}" FontWeight="SemiBold" Margin="4,0,8,0" VerticalAlignment="Center"/>
+                                        <TextBox Grid.Column="2" Text="{Binding Value}" IsReadOnly="True" BorderThickness="0" TextWrapping="NoWrap" Background="Transparent" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </muxc:TreeViewItem>
+                            </DataTemplate>
+                        </muxc:TreeView.ItemTemplate>
+                    </muxc:TreeView>
+                </ScrollViewer>
+            </Grid>
+        </Border>
     </Grid>
 </Window>

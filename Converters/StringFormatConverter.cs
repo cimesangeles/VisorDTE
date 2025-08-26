@@ -1,28 +1,28 @@
-﻿// /Converters/StringFormatConverter.cs
-using Microsoft.UI.Xaml.Data;
+﻿using Microsoft.UI.Xaml.Data;
 using System;
 
-namespace VisorDTE.Converters;
-
-public class StringFormatConverter : IValueConverter
+namespace VisorDTE.Converters
 {
-    public object Convert(object value, Type targetType, object parameter, string language)
+    public class StringFormatConverter : IValueConverter
     {
-        if (value == null) return null;
-        if (parameter is not string formatString) return value.ToString();
-
-        try
+        public object Convert(object value, Type targetType, object parameter, string language)
         {
-            return string.Format(formatString, value);
-        }
-        catch (FormatException)
-        {
-            return value.ToString();
-        }
-    }
+            if (value == null) return null;
+            if (parameter is not string formatString) return value.ToString();
 
-    public object ConvertBack(object value, Type targetType, object parameter, string language)
-    {
-        throw new NotImplementedException();
+            try
+            {
+                return string.Format(formatString, value);
+            }
+            catch (FormatException)
+            {
+                return value.ToString();
+            }
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, string language)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

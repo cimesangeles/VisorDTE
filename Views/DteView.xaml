@@ -7,23 +7,6 @@
     xmlns:models="using:VisorDTE.Models"
     mc:Ignorable="d">
 
-    <UserControl.Resources>
-        <Style x:Key="CopyButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="4,0,0,0"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-
-            <Setter Property="ContentTemplate">
-                <Setter.Value>
-                    <DataTemplate>
-                        <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE8C8;" FontSize="12"/>
-                    </DataTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-    </UserControl.Resources>
-
     <Border BorderBrush="{ThemeResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="48" Margin="24" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" MaxWidth="816">
         <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" Visibility="{Binding Converter={StaticResource NullToVisibilityConverter}}">
 
@@ -53,15 +36,11 @@
                     <TextBlock Text="{Binding Dte.Emisor.NombreComercial, FallbackValue='Nombre Comercial'}" FontSize="28" FontWeight="SemiBold"/>
                     <StackPanel Orientation="Horizontal" Spacing="4">
                         <TextBlock Text="{Binding Dte.Identificacion.NumeroControl}" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" FontSize="12" VerticalAlignment="Center"/>
-                        <Button Style="{StaticResource CopyButtonStyle}" 
-                                Command="{Binding CopyToClipboardCommand}" 
-                                CommandParameter="{Binding Dte.Identificacion.NumeroControl}"/>
+                        <Button Style="{StaticResource CopyButtonStyle}" Command="{Binding CopyToClipboardCommand}" CommandParameter="{Binding Dte.Identificacion.NumeroControl}"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="4">
                         <TextBlock Text="{Binding Dte.Identificacion.CodigoGeneracion}" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" FontSize="12" VerticalAlignment="Center"/>
-                        <Button Style="{StaticResource CopyButtonStyle}" 
-                                Command="{Binding CopyToClipboardCommand}" 
-                                CommandParameter="{Binding Dte.Identificacion.CodigoGeneracion}"/>
+                        <Button Style="{StaticResource CopyButtonStyle}" Command="{Binding CopyToClipboardCommand}" CommandParameter="{Binding Dte.Identificacion.CodigoGeneracion}"/>
                     </StackPanel>
                 </StackPanel>
                 <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top" Spacing="4">

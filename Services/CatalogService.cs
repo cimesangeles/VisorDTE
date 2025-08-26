@@ -1,56 +1,55 @@
-﻿// /Services/CatalogService.cs
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 
-namespace VisorDTE.Services;
-
-public class CatalogService
+namespace VisorDTE.Services
 {
-    private readonly Dictionary<string, Dictionary<string, string>> _catalogs = new();
-    private bool _isInitialized = false; // Bandera para evitar recargas innecesarias
-
-    // Hacemos la carga un método explícito que se puede esperar (await)
-    public async Task InitializeAsync()
+    public class CatalogService
     {
-        if (_isInitialized) return;
+        private readonly Dictionary<string, Dictionary<string, string>> _catalogs = new();
+        private bool _isInitialized = false;
 
-        var dir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-        var catalogPath = Path.Combine(dir, "Catalogs");
-
-        if (!Directory.Exists(catalogPath)) return;
-
-        foreach (var filePath in Directory.GetFiles(catalogPath, "*.ini"))
+        public async Task InitializeAsync()
         {
-            var catalogName = Path.GetFileNameWithoutExtension(filePath);
-            var catalogData = new Dictionary<string, string>();
-            var lines = await File.ReadAllLinesAsync(filePath);
+            if (_isInitialized) return;
 
-            foreach (var line in lines)
+            var dir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var catalogPath = Path.Combine(dir, "Catalogs");
+
+            if (!Directory.Exists(catalogPath)) return;
+
+            foreach (var filePath in Directory.GetFiles(catalogPath, "*.ini"))
             {
-                if (string.IsNullOrWhiteSpace(line) || line.Trim().StartsWith("[")) continue;
-                var parts = line.Split('=', 2);
-                if (parts.Length == 2)
+                var catalogName = Path.GetFileNameWithoutExtension(filePath);
+                var catalogData = new Dictionary<string, string>();
+                var lines = await File.ReadAllLinesAsync(filePath);
+
+                foreach (var line in lines)
                 {
-                    catalogData[parts[0].Trim()] = parts[1].Trim();
+                    if (string.IsNullOrWhiteSpace(line) || line.Trim().StartsWith("[")) continue;
+                    var parts = line.Split('=', 2);
+                    if (parts.Length == 2)
+                    {
+                        catalogData[parts[0].Trim()] = parts[1].Trim();
+                    }
                 }
+                _catalogs[catalogName] = catalogData;
             }
-            _catalogs[catalogName] = catalogData;
+            _isInitialized = true;
         }
-        _isInitialized = true;
-    }
 
-    public string GetDescription(string catalogName, string code)
-    {
-        if (string.IsNullOrEmpty(code)) return "N/A";
-
-        if (_catalogs.TryGetValue(catalogName, out var catalog) && catalog.TryGetValue(code, out var description))
+        public string GetDescription(string catalogName, string code)
         {
-            return $"{description}";
-        }
+            if (string.IsNullOrEmpty(code)) return "N/A";
 
-        return code; // Devuelve el código si no encuentra la descripción
+            if (_catalogs.TryGetValue(catalogName, out var catalog) && catalog.TryGetValue(code, out var description))
+            {
+                return $"{description}";
+            }
+
+            return code;
+        }
     }
 }

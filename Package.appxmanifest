@@ -8,11 +8,11 @@
   IgnorableNamespaces="uap rescap">
 
   <Identity
-    Name="cd442f51-23b5-4f4d-a244-f9bfb92a5c79"
+    Name="cc8975c3-4d7c-48ec-9615-50807e988304"
     Publisher="CN=siuis"
     Version="1.0.0.0" />
 
-  <mp:PhoneIdentity PhoneProductId="cd442f51-23b5-4f4d-a244-f9bfb92a5c79" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
+  <mp:PhoneIdentity PhoneProductId="cc8975c3-4d7c-48ec-9615-50807e988304" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
     <DisplayName>VisorDTE</DisplayName>

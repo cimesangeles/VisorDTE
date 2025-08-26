@@ -1,13 +1,12 @@
-// /Views/DteView.xaml.cs
 using Microsoft.UI.Xaml.Controls;
 
-namespace VisorDTE.Views;
-
-public sealed partial class DteView : UserControl
+namespace VisorDTE.Views
 {
-    // Ya no necesitamos la propiedad ViewModel ni el evento DataContextChanged
-    public DteView()
+    public sealed partial class DteView : UserControl
     {
-        this.InitializeComponent();
+        public DteView()
+        {
+            this.InitializeComponent();
+        }
     }
 }

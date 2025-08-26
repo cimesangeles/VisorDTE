@@ -1,22 +1,22 @@
-﻿// /Converters/PercentageConverter.cs
-using Microsoft.UI.Xaml.Data;
+﻿using Microsoft.UI.Xaml.Data;
 using System;
 
-namespace VisorDTE.Converters;
-
-public class PercentageConverter : IValueConverter
+namespace VisorDTE.Converters
 {
-    public object Convert(object value, Type targetType, object parameter, string language)
+    public class PercentageConverter : IValueConverter
     {
-        if (value is double d)
+        public object Convert(object value, Type targetType, object parameter, string language)
         {
-            return d.ToString("P0");
+            if (value is double d)
+            {
+                return d.ToString("P0");
+            }
+            return "100%";
         }
-        return "100%";
-    }
 
-    public object ConvertBack(object value, Type targetType, object parameter, string language)
-    {
-        throw new NotImplementedException();
+        public object ConvertBack(object value, Type targetType, object parameter, string language)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

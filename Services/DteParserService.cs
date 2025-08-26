@@ -1,40 +1,40 @@
-﻿// /Services/DteParserService.cs
-using System;
+﻿using System;
 using System.Text.Json;
 using VisorDTE.Models;
 
-namespace VisorDTE.Services;
-
-public class DteParserService
+namespace VisorDTE.Services
 {
-    public IDte ParseDte(string jsonContent)
+    public class DteParserService
     {
-        try
+        public IDte ParseDte(string jsonContent)
         {
-            var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-            var jsonDocument = JsonDocument.Parse(jsonContent);
-
-            if (jsonDocument.RootElement.TryGetProperty("dteJson", out var dteJsonElement))
+            try
             {
-                jsonContent = dteJsonElement.GetRawText();
-                jsonDocument = JsonDocument.Parse(jsonContent);
+                var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var jsonDocument = JsonDocument.Parse(jsonContent);
+
+                if (jsonDocument.RootElement.TryGetProperty("dteJson", out var dteJsonElement))
+                {
+                    jsonContent = dteJsonElement.GetRawText();
+                    jsonDocument = JsonDocument.Parse(jsonContent);
+                }
+
+                var tipoDte = jsonDocument.RootElement
+                    .GetProperty("identificacion")
+                    .GetProperty("tipoDte")
+                    .GetString();
+
+                return tipoDte switch
+                {
+                    "01" => JsonSerializer.Deserialize<Factura>(jsonContent, jsonOptions),
+                    "03" => JsonSerializer.Deserialize<ComprobanteCreditoFiscal>(jsonContent, jsonOptions),
+                    _ => throw new NotSupportedException($"El tipo de DTE '{tipoDte}' no es soportado.")
+                };
             }
-
-            var tipoDte = jsonDocument.RootElement
-                .GetProperty("identificacion")
-                .GetProperty("tipoDte")
-                .GetString();
-
-            return tipoDte switch
+            catch (Exception ex)
             {
-                "01" => JsonSerializer.Deserialize<Factura>(jsonContent, jsonOptions),
-                "03" => JsonSerializer.Deserialize<ComprobanteCreditoFiscal>(jsonContent, jsonOptions),
-                _ => throw new NotSupportedException($"El tipo de DTE '{tipoDte}' no es soportado.")
-            };
-        }
-        catch (Exception ex)
-        {
-            throw new JsonException($"Error al parsear el DTE. Verifique el formato. Detalle: {ex.Message}");
+                throw new JsonException($"Error al parsear el DTE. Verifique el formato. Detalle: {ex.Message}");
+            }
         }
     }
 }

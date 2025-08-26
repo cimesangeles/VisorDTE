@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
@@ -13,12 +13,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <None Remove="Catalogs\CAT-002-TipoDocumento.ini" />
-    <None Remove="Catalogs\CAT-009-TipoEstablecimiento.ini" />
-    <None Remove="Catalogs\CAT-012-Departamento.ini" />
-    <None Remove="Catalogs\CAT-013-Municipio.ini" />
-    <None Remove="Catalogs\CAT-014-UnidadMedida.ini" />
-    <None Remove="Catalogs\CAT-016-CondicionOperacion.ini" />
+    <None Remove="Views\JsonNodeView.xaml" />
   </ItemGroup>
 
   <ItemGroup>
@@ -29,24 +24,6 @@
     <Content Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png" />
     <Content Include="Assets\StoreLogo.png" />
     <Content Include="Assets\Wide310x150Logo.scale-200.png" />
-    <Content Include="Catalogs\CAT-002-TipoDocumento.ini">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Catalogs\CAT-009-TipoEstablecimiento.ini">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Catalogs\CAT-012-Departamento.ini">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Catalogs\CAT-013-Municipio.ini">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Catalogs\CAT-014-UnidadMedida.ini">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Catalogs\CAT-016-CondicionOperacion.ini">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
 
   <ItemGroup>
@@ -63,9 +40,15 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="CommunityToolkit.WinUI.UI.Controls" Version="7.1.2" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.4948" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250606001" />
     <PackageReference Include="QuestPDF" Version="2025.7.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\JsonNodeView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
 
   <!--

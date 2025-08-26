@@ -10,12 +10,29 @@
             <ResourceDictionary.MergedDictionaries>
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
             </ResourceDictionary.MergedDictionaries>
+
             <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+            <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
             <converters:PercentageConverter x:Key="PercentageConverter"/>
             <converters:InvertedBooleanConverter x:Key="InvertedBooleanConverter"/>
-            <converters:CurrencyFormatConverter x:Key="CurrencyFormatConverter" xmlns:converters="using:VisorDTE.Converters"/>
+            <converters:CurrencyFormatConverter x:Key="CurrencyFormatConverter"/>
             <converters:StringFormatConverter x:Key="StringFormatConverter"/>
-            
+            <converters:BooleanToGridLengthConverter x:Key="BooleanToGridLengthConverter"/>
+
+            <Style x:Key="CopyButtonStyle" TargetType="Button">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Padding" Value="4,0,0,0"/>
+                <Setter Property="VerticalAlignment" Value="Center"/>
+                <Setter Property="ContentTemplate">
+                    <Setter.Value>
+                        <DataTemplate>
+                            <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE8C8;" FontSize="12"/>
+                        </DataTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
         </ResourceDictionary>
     </Application.Resources>
 </Application>

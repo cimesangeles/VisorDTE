@@ -1,18 +1,18 @@
-﻿// /Converters/InvertedBooleanConverter.cs
-using Microsoft.UI.Xaml.Data;
+﻿using Microsoft.UI.Xaml.Data;
 using System;
 
-namespace VisorDTE.Converters;
-
-public class InvertedBooleanConverter : IValueConverter
+namespace VisorDTE.Converters
 {
-    public object Convert(object value, Type targetType, object parameter, string language)
+    public class InvertedBooleanConverter : IValueConverter
     {
-        return !(value is bool b && b);
-    }
+        public object Convert(object value, Type targetType, object parameter, string language)
+        {
+            return !(value is bool b && b);
+        }
 
-    public object ConvertBack(object value, Type targetType, object parameter, string language)
-    {
-        return !(value is bool b && b);
+        public object ConvertBack(object value, Type targetType, object parameter, string language)
+        {
+            return !(value is bool b && b);
+        }
     }
 }

@@ -1,0 +1,49 @@
+<UserControl
+    x:Class="VisorDTE.Views.ErrorSummaryView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="using:VisorDTE.Models"
+    mc:Ignorable="d">
+
+    <Grid MinWidth="600" MinHeight="300">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,12" Spacing="12">
+            <TextBlock x:Name="SuccessCountTextBlock" FontWeight="SemiBold" Foreground="{ThemeResource SystemAccentColorLight2}"/>
+            <TextBlock x:Name="ErrorCountTextBlock" FontWeight="SemiBold" Foreground="#E81123"/>
+        </StackPanel>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="3*"/>
+            </Grid.ColumnDefinitions>
+
+            <ListView x:Name="ErrorListView" Grid.Column="0" Margin="0,0,12,0">
+                <ListView.HeaderTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="Archivos con Error" FontWeight="Bold" Margin="8,4"/>
+                    </DataTemplate>
+                </ListView.HeaderTemplate>
+                <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="models:FileError">
+                        <Grid Padding="8,4" PointerEntered="Item_PointerEntered">
+                            <TextBlock Text="{x:Bind FileName}"/>
+                        </Grid>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+
+            <Border Grid.Column="1" Background="{ThemeResource SystemControlBackgroundBaseLowBrush}" CornerRadius="4">
+                <ScrollViewer Padding="12">
+                    <TextBlock x:Name="ErrorDetailTextBlock" Text="Pasa el cursor sobre un archivo para ver el detalle del error." TextWrapping="Wrap" VerticalAlignment="Center"/>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>
