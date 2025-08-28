@@ -8,15 +8,15 @@
   IgnorableNamespaces="uap rescap">
 
   <Identity
-    Name="cc8975c3-4d7c-48ec-9615-50807e988304"
-    Publisher="CN=siuis"
-    Version="1.0.0.0" />
+    Name="CrazyIntelligenceProgramm.4703B7D2BF03"
+    Publisher="CN=2F909CBB-055E-4443-B55D-6681513C10B8"
+    Version="1.0.6.0" />
 
-  <mp:PhoneIdentity PhoneProductId="cc8975c3-4d7c-48ec-9615-50807e988304" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
+  <mp:PhoneIdentity PhoneProductId="3d3cfd88-9742-4e9a-a532-8187ab5d828a" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
-    <DisplayName>VisorDTE</DisplayName>
-    <PublisherDisplayName>siuis</PublisherDisplayName>
+    <DisplayName>Visor_DTE</DisplayName>
+    <PublisherDisplayName>Crazy Intelligence Programming Studio</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 
@@ -34,7 +34,7 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="VisorDTE"
+        DisplayName="Visor_DTE"
         Description="VisorDTE"
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"

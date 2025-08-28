@@ -5,7 +5,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using System;
-using System.Diagnostics; // <-- Necesario para Debug.WriteLine
+using System.ComponentModel;
 using System.Linq;
 using VisorDTE.ViewModels;
 using WinRT.Interop;
@@ -20,8 +20,6 @@ namespace VisorDTE
         {
             this.InitializeComponent();
             RootGrid.DataContext = ViewModel;
-            Debug.WriteLine("[DEBUG] DataContext de RootGrid establecido en ViewModel.");
-
             this.Title = "Visor de Documentos Tributarios Electrónicos";
             HeaderTitleTextBlock.Text = this.Title;
             this.Activated += MainWindow_Activated;
@@ -82,6 +80,15 @@ namespace VisorDTE
                     childNode.IsExpanded = true;
                 }
             }
+        }
+
+        // --- CÓDIGO CORREGIDO ---
+        private void TreeView_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
+        {
+            // Se usa 'sender as UIElement' como la referencia correcta
+            var delta = e.GetCurrentPoint(sender as UIElement).Properties.MouseWheelDelta;
+            InspectorScrollViewer.ChangeView(null, InspectorScrollViewer.VerticalOffset - delta, null);
+            e.Handled = true;
         }
     }
 }

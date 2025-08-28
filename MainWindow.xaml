@@ -14,9 +14,9 @@
 
     <Grid x:Name="RootGrid">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition x:Name="MainContentColumn" Width="*"/>
+            <ColumnDefinition x:Name="MainContentColumn" Width="*" MinWidth="500"/>
             <ColumnDefinition Width="{Binding IsInspectorVisible, Converter={StaticResource BooleanToGridLengthConverter}, ConverterParameter='Auto'}"/>
-            <ColumnDefinition x:Name="InspectorColumn" Width="{Binding IsInspectorVisible, Converter={StaticResource BooleanToGridLengthConverter}, ConverterParameter='1*'}"/>
+            <ColumnDefinition x:Name="InspectorColumn" Width="{Binding IsInspectorVisible, Converter={StaticResource BooleanToGridLengthConverter}, ConverterParameter='0.6*'}"/>
         </Grid.ColumnDefinitions>
 
         <Grid Grid.Column="0">
@@ -61,7 +61,9 @@
                         <ListView ItemsSource="{Binding DteViewModels}" SelectionMode="Single" SelectionChanged="ListView_SelectionChanged">
                             <ListView.ItemTemplate>
                                 <DataTemplate>
-                                    <views:DteView/>
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                                        <views:DteView/>
+                                    </ScrollViewer>
                                 </DataTemplate>
                             </ListView.ItemTemplate>
                         </ListView>
@@ -91,8 +93,8 @@
                     </Button>
                 </Grid>
 
-                <ScrollViewer Grid.Row="1" Margin="0,12,0,0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-                    <muxc:TreeView ItemsSource="{Binding JsonTreeNodes}" Loaded="TreeView_Loaded">
+                <ScrollViewer x:Name="InspectorScrollViewer" Grid.Row="1" Margin="0,12,0,0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                    <muxc:TreeView ItemsSource="{Binding JsonTreeNodes}" Loaded="TreeView_Loaded" PointerWheelChanged="TreeView_PointerWheelChanged">
                         <muxc:TreeView.ItemTemplate>
                             <DataTemplate>
                                 <muxc:TreeViewItem ItemsSource="{Binding Children}" IsExpanded="True">

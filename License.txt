@@ -1,0 +1,16 @@
+**Términos y Condiciones de Uso de VisorDTE**
+
+**Fecha de vigencia:** 25 de Agosto de 2025
+
+Estos términos rigen el uso de la aplicación VisorDTE ("el software"), proporcionada por Crazy Intelligence Programming Studio ("la compañía").
+
+**1. Licencia de Uso**
+Al adquirir el software a través de la Microsoft Store, la compañía le otorga una licencia personal, no exclusiva e intransferible para usar el 100% de la capacidad funcional del aplicativo, según el precio estipulado en la tienda. Esta licencia es válida para la instalación y uso en los dispositivos asociados a la cuenta de Microsoft con la que se realizó la compra.
+
+**2. Canal de Distribución Exclusivo**
+El único canal autorizado para la descarga, instalación y compra de este software es la **Microsoft Store**. Crazy Intelligence Programming Studio no se hace responsable de cualquier inconveniente de funcionalidad, pérdida de datos, o problemas de seguridad (incluyendo, pero no limitado a, malware, spyware o virus) que puedan presentarse si la aplicación fue obtenida a través de otros medios y/o orígenes no oficiales.
+
+**3. Responsabilidad del Usuario**
+El uso, ejecución e interpretación de los datos procesados por la aplicación es de entera y exclusiva responsabilidad del usuario que ha pagado por el uso del aplicativo. Crazy Intelligence Programming Studio no se hace responsable por decisiones fiscales, contables o de cualquier otra índole tomadas por el usuario a partir de la información visualizada en el software.
+
+---

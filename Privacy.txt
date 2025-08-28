@@ -1,0 +1,19 @@
+**Política de Privacidad para VisorDTE**
+
+**Fecha de vigencia:** 25 de Agosto de 2025
+
+Esta política de privacidad describe las prácticas de manejo de datos de la aplicación VisorDTE, desarrollada por Crazy Intelligence Programming Studio.
+
+**1. Procesamiento de Datos 100% Local**
+VisorDTE es una aplicación de escritorio diseñada para operar de forma completamente offline. Toda la información contenida en los archivos .json que el usuario abre es procesada y visualizada exclusivamente en la computadora local del usuario. **Ninguna información contenida en los Documentos Tributarios Electrónicos (DTE) sale, se transmite, se comparte o se almacena fuera del equipo del cliente.**
+
+**2. No Recopilación de Información**
+Garantizamos que VisorDTE no recopila, almacena ni transmite ningún tipo de información personal del usuario ni datos de telemetría o diagnóstico de la computadora donde está instalada. El funcionamiento de la aplicación no depende de ninguna conexión a servidores externos propiedad de Crazy Intelligence Programming Studio.
+
+**3. Especificidad de los Archivos**
+El aplicativo está diseñado para abrir y procesar exclusivamente archivos en formato .json que cumplan con la estructura técnica para Documentos Tributarios Electrónicos (DTE) definida y actualizada por el Ministerio de Hacienda de El Salvador a Agosto de 2025.
+
+**Contacto:**
+Si tiene alguna pregunta sobre esta política de privacidad, puede contactarnos a través de los canales de soporte provistos en la Microsoft Store.
+
+---

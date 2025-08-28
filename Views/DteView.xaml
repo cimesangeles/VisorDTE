@@ -23,14 +23,13 @@
                         </VisualState.StateTriggers>
                         <VisualState.Setters>
                             <Setter Target="EmisorReceptorGrid.ColumnDefinitions" Value="*"/>
-                            <Setter Target="ReceptorPanel.(Grid.Column)" Value="0"/>
                             <Setter Target="ReceptorPanel.(Grid.Row)" Value="1"/>
+                            <Setter Target="ReceptorPanel.(Grid.Column)" Value="0"/>
                             <Setter Target="ReceptorPanel.Margin" Value="0,24,0,0"/>
                         </VisualState.Setters>
                     </VisualState>
                 </VisualStateGroup>
             </VisualStateManager.VisualStateGroups>
-
             <Grid Grid.Row="0" Margin="0,0,0,24">
                 <StackPanel>
                     <TextBlock Text="{Binding Dte.Emisor.NombreComercial, FallbackValue='Nombre Comercial'}" FontSize="28" FontWeight="SemiBold"/>
