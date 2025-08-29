@@ -15,6 +15,7 @@
     <Grid x:Name="RootGrid">
         <Grid.Resources>
             <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
         </Grid.Resources>
 
         <Grid.ColumnDefinitions>
@@ -31,7 +32,7 @@
             </Grid.RowDefinitions>
             <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="12" Margin="12,8,12,0" Background="#3498db">
                 <Border BorderBrush="Black" BorderThickness="1" CornerRadius="5" Margin="12">
-                    <Image Source="ms-appx:///Assets/StoreLogo.scale-100.png" Height="48" Width="48" VerticalAlignment="Center"/>
+                    <Image Source="ms-appx:///Assets/StoreLogo.scale-200.png" Height="48" Width="48" VerticalAlignment="Center"/>
                 </Border>
                 <TextBlock x:Name="HeaderTitleTextBlock" Foreground="White" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center"/>
             </StackPanel>
@@ -44,7 +45,12 @@
                     <AppBarButton Icon="Help" Label="Acerca de..." Command="{Binding ShowAboutDialogCommand}"/>
                 </CommandBar.SecondaryCommands>
                 <CommandBar.Content>
-                    <AutoSuggestBox QueryIcon="Find" PlaceholderText="Buscar por Número de Control..." Text="{Binding SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" MinWidth="300"/>
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <AutoSuggestBox QueryIcon="Find" PlaceholderText="Buscar por Número de Control..." Text="{Binding SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" MinWidth="300"/>
+                        <Button Command="{Binding PasteSearchCommand}" ToolTipService.ToolTip="Pegar">
+                            <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE77F;"/>
+                        </Button>
+                    </StackPanel>
                 </CommandBar.Content>
             </CommandBar>
             <muxc:TabView Grid.Row="2" Margin="0,-1,0,0">
@@ -73,22 +79,30 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="12,12,12,0">
+                <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="12,12,12,0">
                     <TextBlock Grid.Column="0" Text="Inspector de Propiedades" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0,0,0"/>
-                    <Button Grid.Column="1" Command="{Binding ToggleInspectorCommand}" Background="Transparent" BorderThickness="0" Padding="8">
+
+                    <Button Grid.Column="1" 
+                            Content="{Binding ToggleExpandCollapseLabel}" 
+                            Command="{Binding ToggleExpandCollapseCommand}" 
+                            HorizontalAlignment="Right"
+                            Style="{ThemeResource AccentButtonStyle}"/>
+
+                    <Button Grid.Column="2" Command="{Binding ToggleInspectorCommand}" Background="Transparent" BorderThickness="0" Padding="8">
                         <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE8BB;" FontSize="12"/>
                     </Button>
                 </Grid>
                 <ScrollViewer x:Name="InspectorScrollViewer" Grid.Row="1" Margin="0,12,0,0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-                    <muxc:TreeView ItemsSource="{Binding JsonTreeNodes}" Loaded="TreeView_Loaded" PointerWheelChanged="TreeView_PointerWheelChanged">
+                    <muxc:TreeView x:Name="InspectorTreeView" ItemsSource="{Binding JsonTreeNodes}">
                         <muxc:TreeView.ItemTemplate>
-                            <DataTemplate>
-                                <muxc:TreeViewItem ItemsSource="{Binding Children}" IsExpanded="True">
+                            <DataTemplate x:DataType="models:JsonPropertyNode">
+                                <muxc:TreeViewItem ItemsSource="{Binding Children}" 
+                                                   IsExpanded="{Binding DataContext.IsTreeExpanded, ElementName=RootGrid, Mode=OneWay}">
                                     <Grid ColumnDefinitions="Auto,Auto,*" VerticalAlignment="Center">
                                         <Button Grid.Column="0"
                                                 Style="{StaticResource CopyButtonStyle}"
-                                                Command="{Binding CopyCommand}"
-                                                CommandParameter="{Binding Value}"
+                                                Click="CopyButton_Click"
+                                                DataContext="{Binding}"
                                                 Visibility="{Binding Value, Converter={StaticResource NullToVisibilityConverter}}"/>
                                         <TextBlock Grid.Column="1" Text="{Binding PropertyName}" FontWeight="SemiBold" Margin="4,0,8,0" VerticalAlignment="Center"/>
                                         <TextBox Grid.Column="2" Text="{Binding Value}" IsReadOnly="True" BorderThickness="0" TextWrapping="NoWrap" Background="Transparent" VerticalAlignment="Center"/>
@@ -103,7 +117,7 @@
 
         <toolkit:GridSplitter Grid.Column="1" Width="8" ResizeBehavior="BasedOnAlignment"
                               ResizeDirection="Auto"
-                              Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}"
+                              Background="{ThemeResource SystemControlPageBackgroundBaseLowBrush}"
                               HorizontalAlignment="Left"
                               Visibility="{Binding IsInspectorVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
     </Grid>
