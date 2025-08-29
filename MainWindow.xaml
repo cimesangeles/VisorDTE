@@ -13,10 +13,13 @@
     xmlns:toolkit="using:CommunityToolkit.WinUI.UI.Controls">
 
     <Grid x:Name="RootGrid">
+        <Grid.Resources>
+            <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        </Grid.Resources>
+
         <Grid.ColumnDefinitions>
-            <ColumnDefinition x:Name="MainContentColumn" Width="*" MinWidth="500"/>
-            <ColumnDefinition Width="{Binding IsInspectorVisible, Converter={StaticResource BooleanToGridLengthConverter}, ConverterParameter='Auto'}"/>
-            <ColumnDefinition x:Name="InspectorColumn" Width="{Binding IsInspectorVisible, Converter={StaticResource BooleanToGridLengthConverter}, ConverterParameter='0.6*'}"/>
+            <ColumnDefinition x:Name="MainContentColumn" Width="*"/>
+            <ColumnDefinition x:Name="InspectorColumn" Width="0" MinWidth="0"/>
         </Grid.ColumnDefinitions>
 
         <Grid Grid.Column="0">
@@ -47,26 +50,14 @@
             <muxc:TabView Grid.Row="2" Margin="0,-1,0,0">
                 <muxc:TabView.TabItems>
                     <muxc:TabViewItem Header="Vista por Página">
-                        <FlipView ItemsSource="{Binding DteViewModels}" SelectedItem="{Binding SelectedDte, Mode=TwoWay}" PointerWheelChanged="FlipView_PointerWheelChanged">
-                            <FlipView.ItemTemplate>
-                                <DataTemplate>
-                                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" ZoomMode="Enabled" MinZoomFactor="0.2">
-                                        <views:DteView HorizontalAlignment="Center" VerticalAlignment="Top"/>
-                                    </ScrollViewer>
-                                </DataTemplate>
-                            </FlipView.ItemTemplate>
-                        </FlipView>
+                        <FlipView ItemsSource="{Binding DteViewModels}" SelectedItem="{Binding SelectedDte, Mode=TwoWay}"
+                                  PointerWheelChanged="FlipView_PointerWheelChanged"
+                                  ItemTemplateSelector="{StaticResource DteTemplateSelector}"/>
                     </muxc:TabViewItem>
                     <muxc:TabViewItem Header="Documento Completo">
-                        <ListView ItemsSource="{Binding DteViewModels}" SelectionMode="Single" SelectionChanged="ListView_SelectionChanged">
-                            <ListView.ItemTemplate>
-                                <DataTemplate>
-                                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
-                                        <views:DteView/>
-                                    </ScrollViewer>
-                                </DataTemplate>
-                            </ListView.ItemTemplate>
-                        </ListView>
+                        <ListView ItemsSource="{Binding DteViewModels}" SelectionMode="Single"
+                                  SelectionChanged="ListView_SelectionChanged"
+                                  ItemTemplateSelector="{StaticResource DteTemplateSelector}"/>
                     </muxc:TabViewItem>
                 </muxc:TabView.TabItems>
             </muxc:TabView>
@@ -75,24 +66,19 @@
             </Grid>
         </Grid>
 
-        <toolkit:GridSplitter Grid.Column="1" Width="8" ResizeBehavior="BasedOnAlignment"
-                              ResizeDirection="Auto" Background="Transparent"
-                              HorizontalAlignment="Center"/>
-
-        <Border Grid.Column="2" x:Name="JsonViewerPanel" Background="{ThemeResource SystemControlBackgroundBaseLowBrush}">
+        <Border Grid.Column="1" x:Name="JsonViewerPanel" Background="{ThemeResource SystemControlBackgroundBaseLowBrush}"
+                Visibility="{Binding IsInspectorVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-
                 <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="12,12,12,0">
-                    <TextBlock Grid.Column="0" Text="Inspector de Propiedades" FontWeight="Bold" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="0" Text="Inspector de Propiedades" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0,0,0"/>
                     <Button Grid.Column="1" Command="{Binding ToggleInspectorCommand}" Background="Transparent" BorderThickness="0" Padding="8">
                         <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE8BB;" FontSize="12"/>
                     </Button>
                 </Grid>
-
                 <ScrollViewer x:Name="InspectorScrollViewer" Grid.Row="1" Margin="0,12,0,0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
                     <muxc:TreeView ItemsSource="{Binding JsonTreeNodes}" Loaded="TreeView_Loaded" PointerWheelChanged="TreeView_PointerWheelChanged">
                         <muxc:TreeView.ItemTemplate>
@@ -114,5 +100,11 @@
                 </ScrollViewer>
             </Grid>
         </Border>
+
+        <toolkit:GridSplitter Grid.Column="1" Width="8" ResizeBehavior="BasedOnAlignment"
+                              ResizeDirection="Auto"
+                              Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}"
+                              HorizontalAlignment="Left"
+                              Visibility="{Binding IsInspectorVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
     </Grid>
 </Window>

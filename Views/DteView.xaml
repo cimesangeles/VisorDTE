@@ -7,29 +7,8 @@
     xmlns:models="using:VisorDTE.Models"
     mc:Ignorable="d">
 
-    <Border BorderBrush="{ThemeResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="48" Margin="24" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" MaxWidth="816">
+    <Border BorderBrush="{ThemeResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="48" Margin="24" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" Width="816">
         <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" Visibility="{Binding Converter={StaticResource NullToVisibilityConverter}}">
-
-            <VisualStateManager.VisualStateGroups>
-                <VisualStateGroup>
-                    <VisualState x:Name="WideLayout">
-                        <VisualState.StateTriggers>
-                            <AdaptiveTrigger MinWindowWidth="720" />
-                        </VisualState.StateTriggers>
-                    </VisualState>
-                    <VisualState x:Name="NarrowLayout">
-                        <VisualState.StateTriggers>
-                            <AdaptiveTrigger MinWindowWidth="0" />
-                        </VisualState.StateTriggers>
-                        <VisualState.Setters>
-                            <Setter Target="EmisorReceptorGrid.ColumnDefinitions" Value="*"/>
-                            <Setter Target="ReceptorPanel.(Grid.Row)" Value="1"/>
-                            <Setter Target="ReceptorPanel.(Grid.Column)" Value="0"/>
-                            <Setter Target="ReceptorPanel.Margin" Value="0,24,0,0"/>
-                        </VisualState.Setters>
-                    </VisualState>
-                </VisualStateGroup>
-            </VisualStateManager.VisualStateGroups>
             <Grid Grid.Row="0" Margin="0,0,0,24">
                 <StackPanel>
                     <TextBlock Text="{Binding Dte.Emisor.NombreComercial, FallbackValue='Nombre Comercial'}" FontSize="28" FontWeight="SemiBold"/>
@@ -53,8 +32,8 @@
 
             <Rectangle Grid.Row="1" Height="1" Fill="{ThemeResource SystemControlForegroundBaseMediumBrush}" Margin="0,10"/>
 
-            <Grid x:Name="EmisorReceptorGrid" Grid.Row="2" Margin="0,24" ColumnDefinitions="*,24,*" RowDefinitions="Auto,Auto">
-                <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2">
+            <Grid x:Name="EmisorReceptorGrid" Grid.Row="2" Margin="0,24" ColumnDefinitions="*,24,*">
+                <StackPanel Grid.Column="0" Spacing="2">
                     <TextBlock Text="EMISOR" FontWeight="Bold" Margin="0,0,0,8"/>
                     <TextBlock Text="{Binding Dte.Emisor.Nombre}" FontWeight="SemiBold" TextWrapping="Wrap"/>
                     <TextBlock Text="{Binding Dte.Emisor.NombreComercial}" Foreground="Gray" FontStyle="Italic"/>
@@ -72,7 +51,7 @@
                     </StackPanel>
                 </StackPanel>
 
-                <StackPanel x:Name="ReceptorPanel" Grid.Row="0" Grid.Column="2" Spacing="2">
+                <StackPanel Grid.Column="2" Spacing="2">
                     <TextBlock Text="RECEPTOR" FontWeight="Bold" Margin="0,0,0,8"/>
                     <StackPanel Orientation="Horizontal" Spacing="4">
                         <TextBlock Text="{Binding Dte.Receptor.Nombre}" FontWeight="SemiBold" TextWrapping="Wrap"/>

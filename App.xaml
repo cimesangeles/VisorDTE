@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:VisorDTE"
     xmlns:converters="using:VisorDTE.Converters"
+    xmlns:views="using:VisorDTE.Views"
     RequestedTheme="Dark">
     <Application.Resources>
         <ResourceDictionary>
@@ -32,6 +33,24 @@
                     </Setter.Value>
                 </Setter>
             </Style>
+
+            <DataTemplate x:Key="WideDteTemplate">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" ZoomMode="Enabled" MinZoomFactor="0.2">
+                    <views:DteView HorizontalAlignment="Center" VerticalAlignment="Top"/>
+                </ScrollViewer>
+            </DataTemplate>
+
+            <DataTemplate x:Key="NarrowDteTemplate">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                    <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
+                        <views:DteView/>
+                    </Viewbox>
+                </ScrollViewer>
+            </DataTemplate>
+
+            <views:DteTemplateSelector x:Key="DteTemplateSelector"
+                                       WideTemplate="{StaticResource WideDteTemplate}"
+                                       NarrowTemplate="{StaticResource NarrowDteTemplate}"/>
 
         </ResourceDictionary>
     </Application.Resources>

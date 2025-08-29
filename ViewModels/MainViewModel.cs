@@ -6,7 +6,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics; // <-- Necesario para Debug.WriteLine
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -39,8 +38,8 @@ namespace VisorDTE.ViewModels
         [ObservableProperty]
         private ObservableCollection<JsonPropertyNode> _jsonTreeNodes = new();
 
+        // Se elimina el atributo [AlsoNotifyChangeFor] para evitar el bug del compilador
         [ObservableProperty]
-        //[AlsoNotifyChangeFor(nameof(ToggleInspectorLabel))]
         private bool isInspectorVisible = false;
 
         public string ToggleInspectorLabel => IsInspectorVisible ? "Ocultar Inspector" : "Mostrar Inspector";
@@ -54,9 +53,9 @@ namespace VisorDTE.ViewModels
             _catalogService = new CatalogService();
             _parserService = new DteParserService();
             _pdfExportService = new PdfExportService();
-            Debug.WriteLine("[DEBUG] MainViewModel Creado. El comando CopyToClipboard está disponible.");
         }
 
+        // Este método reemplaza la función del atributo [AlsoNotifyChangeFor]
         partial void OnIsInspectorVisibleChanged(bool value)
         {
             OnPropertyChanged(nameof(ToggleInspectorLabel));
@@ -93,11 +92,7 @@ namespace VisorDTE.ViewModels
                 return;
             }
 
-            var rootNode = new JsonPropertyNode
-            {
-                PropertyName = dteViewModel.TipoDteDescripcion,
-                CopyCommand = this.CopyToClipboardCommand
-            };
+            var rootNode = new JsonPropertyNode { PropertyName = dteViewModel.TipoDteDescripcion };
             PopulateChildren(dteViewModel.Dte, rootNode.Children, dteViewModel);
             JsonTreeNodes.Add(rootNode);
         }
@@ -118,11 +113,7 @@ namespace VisorDTE.ViewModels
                 var value = prop.GetValue(source);
                 if (value == null) continue;
 
-                var node = new JsonPropertyNode
-                {
-                    PropertyName = prop.Name,
-                    CopyCommand = this.CopyToClipboardCommand
-                };
+                var node = new JsonPropertyNode { PropertyName = prop.Name };
 
                 if (IsSimpleType(prop.PropertyType))
                 {
@@ -134,11 +125,7 @@ namespace VisorDTE.ViewModels
                     {
                         if (item != null)
                         {
-                            var childNode = new JsonPropertyNode
-                            {
-                                PropertyName = $"[{children.Count}]",
-                                CopyCommand = this.CopyToClipboardCommand
-                            };
+                            var childNode = new JsonPropertyNode { PropertyName = $"[{children.Count}]" };
                             PopulateChildren(item, childNode.Children, dteViewModel);
                             if (childNode.Children.Count > 0)
                             {
@@ -185,25 +172,6 @@ namespace VisorDTE.ViewModels
         {
             IsInspectorVisible = !IsInspectorVisible;
         }
-
-        [RelayCommand]
-        private void CopyToClipboard(string text)
-        {
-            Debug.WriteLine($"--- [DEBUG] Se llamó a CopyToClipboard ---");
-            Debug.WriteLine($"--- [DEBUG] Valor recibido: '{text}' ---");
-
-            if (string.IsNullOrEmpty(text))
-            {
-                Debug.WriteLine($"--- [DEBUG] El valor es nulo o vacío. No se copia nada. ---");
-                return;
-            }
-
-            var dataPackage = new DataPackage();
-            dataPackage.SetText(text);
-            Clipboard.SetContent(dataPackage);
-            Debug.WriteLine($"--- [DEBUG] ¡Texto copiado al portapapeles! ---");
-        }
-
 
         [RelayCommand]
         private async Task OpenFilesAsync()
@@ -360,6 +328,16 @@ namespace VisorDTE.ViewModels
                 }
             };
             await aboutDialog.ShowAsync();
+        }
+
+        [RelayCommand]
+        private void CopyToClipboard(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return;
+
+            var dataPackage = new DataPackage();
+            dataPackage.SetText(text);
+            Clipboard.SetContent(dataPackage);
         }
     }
 }
