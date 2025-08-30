@@ -65,8 +65,7 @@
 		<AppxBundle>Always</AppxBundle>
 		<HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
 		<AppxPackageDir>C:\Users\siuis\source\repos\VisorDTE\bin\Sideloading\</AppxPackageDir>
-		<AppxBundlePlatforms>x86|x64|arm64</AppxBundlePlatforms>
+		<AppxBundlePlatforms>x64</AppxBundlePlatforms>
 		<DefaultLanguage>es-SV</DefaultLanguage>
-		<PackageCertificateThumbprint>D17AB17C813AD011F66A12986584094435AE701A</PackageCertificateThumbprint>
 	</PropertyGroup>
 </Project>
