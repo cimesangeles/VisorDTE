@@ -37,11 +37,8 @@ public class DteParserService
 
         var processor = _processors.FirstOrDefault(p => p.HandledDteType == dteType);
 
-        if (processor is null) // SIMPLIFICADO: Sugerencia del compilador (IDE0270).
-        {
-            throw new NotSupportedException($"El tipo de DTE '{dteType}' no es soportado. No se encontró un Add-on para procesarlo.");
-        }
-
-        return processor.Parse(jsonContent);
+        return processor is null
+            ? throw new NotSupportedException($"El tipo de DTE '{dteType}' no es soportado. No se encontró un Add-on para procesarlo.")
+            : processor.Parse(jsonContent);
     }
 }

@@ -21,12 +21,6 @@ public class FacturaConsumidorFinalProcessor : IDteProcessor
     {
         var dte = JsonSerializer.Deserialize<Dte>(jsonContent, _jsonOptions);
 
-        // Validamos que el JSON se haya podido convertir al objeto Dte.
-        if (dte is null) // SIMPLIFICADO: Sugerencia del compilador (IDE0270).
-        {
-            throw new InvalidDataException("El archivo JSON no corresponde a una estructura de DTE válida.");
-        }
-
-        return dte;
+        return dte is null ? throw new InvalidDataException("El archivo JSON no corresponde a una estructura de DTE válida.") : dte;
     }
 }

@@ -29,7 +29,7 @@ public class Dte
     public Extension Extension { get; set; }
 
     [JsonPropertyName("apendice")]
-    public Apendice Apendice { get; set; }
+    public List<Apendice> Apendice { get; set; }
 
     // Este campo puede no estar presente en todos los DTE, por eso es anulable.
     [JsonPropertyName("itemsAnulados")]
