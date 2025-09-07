@@ -19,7 +19,9 @@ public class PdfExportService
                 {
                     page.Size(PageSizes.Letter);
                     page.Margin(36);
-                    page.DefaultTextStyle(x => x.FontSize(10).FontFamily(Fonts.Helvetica));
+                    // --- CAMBIO AQUÍ ---
+                    // Se pasa el nombre de la fuente como un string.
+                    page.DefaultTextStyle(x => x.FontSize(10).FontFamily("Helvetica"));
 
                     page.Header().Element(headerContainer => BuildHeader(headerContainer, vm));
                     page.Content().Element(contentContainer => BuildContent(contentContainer, vm));

@@ -18,9 +18,14 @@ public partial class DteViewModel(IDte dte, CatalogService catalogService) : Obs
 
     public string EmisorDireccionCompleta => GetCompleteAddress(Dte.Emisor?.Direccion);
     public string ReceptorDireccionCompleta => GetCompleteAddress(Dte.Receptor?.Direccion);
-
     public string TipoDteDescripcion => _catalogService.GetDescription("CAT-002-TipoDocumento", Dte.Identificacion.TipoDte);
     public string CondicionOperacionDescripcion => _catalogService.GetDescription("CAT-016-CondicionOperacion", Dte.Resumen.CondicionOperacion.ToString());
-
     public double TotalIva => Dte.Resumen.Tributos?.FirstOrDefault(t => t.Codigo == "20")?.Valor ?? 0;
+
+    // --- NUEVO MÉTODO PÚBLICO ---
+    // Este método permite que otras clases usen el servicio de catálogos de forma segura.
+    public string GetCatalogDescription(string catalogName, string code)
+    {
+        return _catalogService.GetDescription(catalogName, code);
+    }
 }

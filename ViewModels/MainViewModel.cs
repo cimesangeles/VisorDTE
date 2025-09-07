@@ -1,5 +1,4 @@
-﻿// /ViewModels/MainViewModel.cs
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Xaml.Controls;
 using System;
@@ -43,14 +42,6 @@ namespace VisorDTE.ViewModels
 
         public string ToggleInspectorLabel => IsInspectorVisible ? "Ocultar Inspector" : "Mostrar Inspector";
 
-        [ObservableProperty]
-        [NotifyPropertyChangedFor(nameof(ToggleExpandCollapseLabel))]
-        private bool _isTreeExpanded = false;
-
-        public string ToggleExpandCollapseLabel => IsTreeExpanded ? "Contraer Todo" : "Expandir Todo";
-
-        public Action<bool> ExpandCollapseAllAction { get; set; }
-
         private readonly CatalogService _catalogService;
         private readonly DteParserService _parserService;
         private readonly PdfExportService _pdfExportService;
@@ -65,7 +56,6 @@ namespace VisorDTE.ViewModels
         partial void OnIsInspectorVisibleChanged(bool value)
         {
             OnPropertyChanged(nameof(ToggleInspectorLabel));
-            if (!value) IsTreeExpanded = false;
         }
 
         partial void OnSearchQueryChanged(string value)
@@ -76,7 +66,6 @@ namespace VisorDTE.ViewModels
         partial void OnSelectedDteChanged(DteViewModel value)
         {
             BuildJsonTree(value);
-            IsTreeExpanded = false;
         }
 
         private void FilterDtes()
@@ -85,13 +74,21 @@ namespace VisorDTE.ViewModels
             var filtered = string.IsNullOrWhiteSpace(SearchQuery)
                 ? _allDtes
                 : _allDtes.Where(vm => vm.Dte.Identificacion.NumeroControl.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase));
-            foreach (var vm in filtered) { DteViewModels.Add(vm); }
+
+            foreach (var vm in filtered)
+            {
+                DteViewModels.Add(vm);
+            }
         }
 
         private void BuildJsonTree(DteViewModel dteViewModel)
         {
             JsonTreeNodes.Clear();
-            if (dteViewModel?.Dte == null) return;
+            if (dteViewModel?.Dte == null)
+            {
+                return;
+            }
+
             var rootNode = new JsonPropertyNode { PropertyName = dteViewModel.TipoDteDescripcion };
             PopulateChildren(dteViewModel.Dte, rootNode.Children, dteViewModel);
             JsonTreeNodes.Add(rootNode);
@@ -100,13 +97,18 @@ namespace VisorDTE.ViewModels
         private void PopulateChildren(object source, ObservableCollection<JsonPropertyNode> children, DteViewModel dteViewModel)
         {
             if (source == null) return;
+
             var properties = source.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
             foreach (var prop in properties)
             {
                 if (prop.GetIndexParameters().Length > 0) continue;
+
                 var value = prop.GetValue(source);
                 if (value == null) continue;
+
                 var node = new JsonPropertyNode { PropertyName = prop.Name };
+
                 if (IsSimpleType(prop.PropertyType))
                 {
                     node.Value = GetCatalogDescription(prop.Name, value.ToString(), dteViewModel);
@@ -119,7 +121,10 @@ namespace VisorDTE.ViewModels
                         {
                             var childNode = new JsonPropertyNode { PropertyName = $"[{children.Count}]" };
                             PopulateChildren(item, childNode.Children, dteViewModel);
-                            if (childNode.Children.Count > 0) node.Children.Add(childNode);
+                            if (childNode.Children.Count > 0)
+                            {
+                                node.Children.Add(childNode);
+                            }
                         }
                     }
                 }
@@ -127,7 +132,11 @@ namespace VisorDTE.ViewModels
                 {
                     PopulateChildren(value, node.Children, dteViewModel);
                 }
-                if (!string.IsNullOrEmpty(node.Value) || node.Children.Count > 0) children.Add(node);
+
+                if (!string.IsNullOrEmpty(node.Value) || node.Children.Count > 0)
+                {
+                    children.Add(node);
+                }
             }
         }
 
@@ -136,12 +145,12 @@ namespace VisorDTE.ViewModels
             if (string.IsNullOrEmpty(value)) return "N/A";
             return propertyName switch
             {
-                "TipoDte" => dteViewModel._catalogService.GetDescription("CAT-002-TipoDocumento", value),
-                "Departamento" => dteViewModel._catalogService.GetDescription("CAT-012-Departamento", value),
-                "Municipio" => dteViewModel._catalogService.GetDescription("CAT-013-Municipio", value),
-                "CondicionOperacion" => dteViewModel._catalogService.GetDescription("CAT-016-CondicionOperacion", value),
-                "TipoEstablecimiento" => dteViewModel._catalogService.GetDescription("CAT-009-TipoEstablecimiento", value),
-                "UnidadMedida" => dteViewModel._catalogService.GetDescription("CAT-014-UnidadMedida", value),
+                "TipoDte" => dteViewModel.GetCatalogDescription("CAT-002-TipoDocumento", value),
+                "Departamento" => dteViewModel.GetCatalogDescription("CAT-012-Departamento", value),
+                "Municipio" => dteViewModel.GetCatalogDescription("CAT-013-Municipio", value),
+                "CondicionOperacion" => dteViewModel.GetCatalogDescription("CAT-016-CondicionOperacion", value),
+                "TipoEstablecimiento" => dteViewModel.GetCatalogDescription("CAT-009-TipoEstablecimiento", value),
+                "UnidadMedida" => dteViewModel.GetCatalogDescription("CAT-014-UnidadMedida", value),
                 _ => value
             };
         }
@@ -157,11 +166,31 @@ namespace VisorDTE.ViewModels
             IsInspectorVisible = !IsInspectorVisible;
         }
 
-        [RelayCommand]
-        private void ToggleExpandCollapse()
+        private void SetExpansionRecursive(JsonPropertyNode node, bool isExpanded)
         {
-            IsTreeExpanded = !IsTreeExpanded;
-            ExpandCollapseAllAction?.Invoke(IsTreeExpanded);
+            node.IsExpanded = isExpanded;
+            foreach (var child in node.Children)
+            {
+                SetExpansionRecursive(child, isExpanded);
+            }
+        }
+
+        [RelayCommand]
+        private void ExpandAll()
+        {
+            foreach (var node in JsonTreeNodes)
+            {
+                SetExpansionRecursive(node, true);
+            }
+        }
+
+        [RelayCommand]
+        private void CollapseAll()
+        {
+            foreach (var node in JsonTreeNodes)
+            {
+                SetExpansionRecursive(node, false);
+            }
         }
 
         [RelayCommand]
@@ -170,7 +199,11 @@ namespace VisorDTE.ViewModels
             try
             {
                 await _catalogService.InitializeAsync();
-                var filePicker = new FileOpenPicker { ViewMode = PickerViewMode.List, SuggestedStartLocation = PickerLocationId.DocumentsLibrary };
+                var filePicker = new FileOpenPicker
+                {
+                    ViewMode = PickerViewMode.List,
+                    SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
+                };
                 filePicker.FileTypeFilter.Add(".json");
                 var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
                 InitializeWithWindow.Initialize(filePicker, hwnd);
@@ -189,13 +222,21 @@ namespace VisorDTE.ViewModels
                         var dteViewModel = new DteViewModel(dteModel, _catalogService);
                         tempDtes.Add(dteViewModel);
                     }
-                    catch (Exception ex) { fileErrors.Add(new FileError { FileName = file.Name, ErrorMessage = ex.Message }); }
+                    catch (Exception ex)
+                    {
+                        fileErrors.Add(new FileError { FileName = file.Name, ErrorMessage = ex.Message });
+                    }
                 }
-                var orderedDtes = tempDtes.OrderBy(vm => vm.Dte.Identificacion.FecEmi).ThenBy(vm => vm.Dte.Identificacion.HorEmi);
-                foreach (var vm in orderedDtes) { _allDtes.Add(vm); }
+                var orderedDtes = tempDtes
+                    .OrderBy(vm => vm.Dte.Identificacion.FecEmi)
+                    .ThenBy(vm => vm.Dte.Identificacion.HorEmi);
+                foreach (var vm in orderedDtes)
+                {
+                    _allDtes.Add(vm);
+                }
                 FilterDtes();
                 StatusText = $"{_allDtes.Count} DTE(s) cargados correctamente.";
-                if (fileErrors.Count > 0)
+                if (fileErrors.Any())
                 {
                     StatusText += $" {fileErrors.Count} archivo(s) con error.";
                     await ShowErrorSummaryDialog(fileErrors);
@@ -211,18 +252,32 @@ namespace VisorDTE.ViewModels
         private async Task ShowErrorSummaryDialog(List<FileError> errors)
         {
             var errorView = new ErrorSummaryView { Errors = errors, SuccessCount = _allDtes.Count };
-            var dialog = new ContentDialog { Title = "Resumen de Carga de Archivos", Content = errorView, CloseButtonText = "OK", XamlRoot = App.MainWindow.Content.XamlRoot };
+            var dialog = new ContentDialog
+            {
+                Title = "Resumen de Carga de Archivos",
+                Content = errorView,
+                CloseButtonText = "OK",
+                XamlRoot = App.MainWindow.Content.XamlRoot
+            };
             await dialog.ShowAsync();
         }
 
         [RelayCommand]
         private async Task ExportToPdfAsync()
         {
-            if (DteViewModels.Count == 0) { StatusText = "No hay DTEs para exportar."; return; }
+            if (DteViewModels.Count == 0)
+            {
+                StatusText = "No hay DTEs para exportar.";
+                return;
+            }
             try
             {
-                var fileSaver = new FileSavePicker { SuggestedStartLocation = PickerLocationId.DocumentsLibrary, SuggestedFileName = $"Exportacion_DTE_{DateTime.Now:yyyyMMdd}" };
-                fileSaver.FileTypeChoices.Add("Archivo PDF", [".pdf"]);
+                var fileSaver = new FileSavePicker
+                {
+                    SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
+                    SuggestedFileName = $"Exportacion_DTE_{DateTime.Now:yyyyMMdd}"
+                };
+                fileSaver.FileTypeChoices.Add("Archivo PDF", ["pdf"]);
                 var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
                 InitializeWithWindow.Initialize(fileSaver, hwnd);
                 var file = await fileSaver.PickSaveFileAsync();
@@ -234,7 +289,10 @@ namespace VisorDTE.ViewModels
                         await Task.Run(() => _pdfExportService.ExportAsPdf(file.Path, [.. DteViewModels]));
                         StatusText = $"Exportado a {file.Name} correctamente.";
                     }
-                    catch (Exception ex) { await ShowErrorDialog("Error al generar el PDF", $"Detalle: {ex.Message}"); }
+                    catch (Exception ex)
+                    {
+                        await ShowErrorDialog("Error al generar el PDF", $"Detalle: {ex.Message}");
+                    }
                 }
             }
             catch (Exception ex)
@@ -246,14 +304,40 @@ namespace VisorDTE.ViewModels
 
         private static async Task ShowErrorDialog(string title, string content)
         {
-            var dialog = new ContentDialog { Title = title, Content = content, CloseButtonText = "OK", XamlRoot = App.MainWindow.Content.XamlRoot };
+            var dialog = new ContentDialog
+            {
+                Title = title,
+                Content = content,
+                CloseButtonText = "OK",
+                XamlRoot = App.MainWindow.Content.XamlRoot
+            };
             await dialog.ShowAsync();
         }
 
         [RelayCommand]
         private static async Task ShowAboutDialogAsync()
         {
-            var aboutDialog = new ContentDialog { Title = "Acerca de Visor DTE CIPS", CloseButtonText = "Cerrar", XamlRoot = App.MainWindow.Content.XamlRoot, Content = new StackPanel { Spacing = 12, Children = { new TextBlock { Text = "Visor de Documentos Tributarios Electrónicos" }, new TextBlock { Text = "Versión: 1.0.0" }, new TextBlock { Text = "© 2025 Crazy Intelligence Programming Studio (CIPS)" }, new HyperlinkButton { Content = "Soporte: cips-support@outlook.com", NavigateUri = new Uri("mailto:cips-support@outlook.com") } } } };
+            var aboutDialog = new ContentDialog
+            {
+                Title = "Acerca de Visor DTE CIPS",
+                CloseButtonText = "Cerrar",
+                XamlRoot = App.MainWindow.Content.XamlRoot,
+                Content = new StackPanel
+                {
+                    Spacing = 12,
+                    Children =
+                    {
+                        new TextBlock { Text = "Visor de Documentos Tributarios Electrónicos" },
+                        new TextBlock { Text = "Versión: 1.0.0" },
+                        new TextBlock { Text = "© 2025 Crazy Intelligence Programming Studio (CIPS)" },
+                        new HyperlinkButton
+                        {
+                            Content = "Soporte: cips-support@outlook.com",
+                            NavigateUri = new Uri("mailto:cips-support@outlook.com")
+                        }
+                    }
+                }
+            };
             await aboutDialog.ShowAsync();
         }
 
@@ -264,21 +348,6 @@ namespace VisorDTE.ViewModels
             var dataPackage = new DataPackage();
             dataPackage.SetText(text);
             Clipboard.SetContent(dataPackage);
-        }
-
-        // --- NUEVO COMANDO PARA EL BOTÓN DE PEGAR ---
-        [RelayCommand]
-        private async Task PasteSearchAsync()
-        {
-            DataPackageView dataPackageView = Clipboard.GetContent();
-            if (dataPackageView.Contains(StandardDataFormats.Text))
-            {
-                string text = await dataPackageView.GetTextAsync();
-                if (!string.IsNullOrEmpty(text))
-                {
-                    SearchQuery = text;
-                }
-            }
         }
     }
 }
