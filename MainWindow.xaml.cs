@@ -10,8 +10,7 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         this.InitializeComponent();
-        ViewModel = new MainViewModel();
-        this.RootGrid.DataContext = ViewModel;
+        ViewModel = new MainViewModel(); // El DataContext se enlaza en el XAML con x:Bind
         this.Title = "Visor de Documentos Tributarios Electrónicos";
     }
 }

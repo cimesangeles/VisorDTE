@@ -5,120 +5,100 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:views="using:VisorDTE.Views"
-    xmlns:viewmodels="using:VisorDTE.ViewModels"
     xmlns:models="using:VisorDTE.Models"
-    mc:Ignorable="d"
-    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
-    xmlns:converters="using:VisorDTE.Converters"
-    xmlns:toolkit="using:CommunityToolkit.WinUI.UI.Controls">
+    xmlns:viewmodels="using:VisorDTE.ViewModels"
+    mc:Ignorable="d">
 
-    <Grid x:Name="RootGrid">
-        <Grid.Resources>
-            <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-            <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
-        </Grid.Resources>
+    <Grid x:Name="RootGrid" DataContext="{x:Bind ViewModel, Mode=OneWay}">
 
         <Grid.ColumnDefinitions>
-            <ColumnDefinition x:Name="MainContentColumn" Width="*"/>
-            <ColumnDefinition x:Name="InspectorColumn" Width="0" MinWidth="0"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
 
         <Grid Grid.Column="0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-            <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="12" Margin="12,8,12,0" Background="#3498db">
-                <Border BorderBrush="Black" BorderThickness="1" CornerRadius="5" Margin="12">
-                    <Image Source="ms-appx:///Assets/StoreLogo.scale-200.png" Height="48" Width="48" VerticalAlignment="Center"/>
-                </Border>
-                <TextBlock x:Name="HeaderTitleTextBlock" Foreground="White" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center"/>
-            </StackPanel>
-            <CommandBar Grid.Row="1" DefaultLabelPosition="Right" Background="Transparent">
+
+            <CommandBar Grid.Row="0" DefaultLabelPosition="Right" Background="Transparent">
                 <AppBarButton Icon="OpenFile" Label="Abrir DTE" Command="{Binding OpenFilesCommand}"/>
                 <AppBarButton Icon="Save" Label="Exportar a PDF" Command="{Binding ExportToPdfCommand}"/>
                 <AppBarSeparator/>
-                <AppBarButton Icon="PreviewLink" Label="{Binding ToggleInspectorLabel}" Command="{Binding ToggleInspectorCommand}"/>
+
+                <AppBarButton Icon="Find" Label="{Binding ToggleInspectorLabel, Mode=OneWay}" Command="{Binding ToggleInspectorCommand}"/>
+
                 <CommandBar.SecondaryCommands>
                     <AppBarButton Icon="Help" Label="Acerca de..." Command="{Binding ShowAboutDialogCommand}"/>
                 </CommandBar.SecondaryCommands>
                 <CommandBar.Content>
-                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                        <AutoSuggestBox QueryIcon="Find" PlaceholderText="Buscar por Número de Control..." Text="{Binding SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" MinWidth="300"/>
-                        <Button Command="{Binding PasteSearchCommand}" ToolTipService.ToolTip="Pegar">
-                            <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE77F;"/>
-                        </Button>
-                    </StackPanel>
+                    <AutoSuggestBox QueryIcon="Find" PlaceholderText="Buscar por Número de Control..." 
+                                    Text="{Binding SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    VerticalAlignment="Center"
+                                    MinWidth="300"/>
                 </CommandBar.Content>
             </CommandBar>
-            <muxc:TabView Grid.Row="2" Margin="0,-1,0,0">
-                <muxc:TabView.TabItems>
-                    <muxc:TabViewItem Header="Vista por Página">
-                        <FlipView ItemsSource="{Binding DteViewModels}" SelectedItem="{Binding SelectedDte, Mode=TwoWay}"
-                                  PointerWheelChanged="FlipView_PointerWheelChanged"
-                                  ItemTemplateSelector="{StaticResource DteTemplateSelector}"/>
-                    </muxc:TabViewItem>
-                    <muxc:TabViewItem Header="Documento Completo">
-                        <ListView ItemsSource="{Binding DteViewModels}" SelectionMode="Single"
-                                  SelectionChanged="ListView_SelectionChanged"
-                                  ItemTemplateSelector="{StaticResource DteTemplateSelector}"/>
-                    </muxc:TabViewItem>
-                </muxc:TabView.TabItems>
-            </muxc:TabView>
-            <Grid Grid.Row="3" Padding="12,8" ColumnDefinitions="*,Auto" Background="{ThemeResource SystemControlBackgroundBaseLowBrush}">
-                <TextBlock Grid.Column="0" Text="{Binding StatusText}" VerticalAlignment="Center" Foreground="Gray"/>
-            </Grid>
+
+            <ListView Grid.Row="1" 
+                      ItemsSource="{Binding DteViewModels}" 
+                      SelectedItem="{Binding SelectedDte, Mode=TwoWay}"
+                      Margin="12,0,12,0">
+                <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="viewmodels:DTEViewModel">
+                        <views:DteView/>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+
+            <Border Grid.Row="2" BorderThickness="0,1,0,0" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
+                <TextBlock Text="{Binding StatusText, Mode=OneWay}" Margin="12,8" Foreground="Gray"/>
+            </Border>
         </Grid>
 
-        <Border Grid.Column="1" x:Name="JsonViewerPanel" Background="{ThemeResource SystemControlBackgroundBaseLowBrush}"
-                Visibility="{Binding IsInspectorVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-                <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="12,12,12,0">
-                    <TextBlock Grid.Column="0" Text="Inspector de Propiedades" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0,0,0"/>
+        <Grid Grid.Column="1" 
+              Width="400"
+              Visibility="{Binding IsInspectorVisible, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"
+              Background="{ThemeResource SystemControlBackgroundBaseLowBrush}"
+              BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}" 
+              BorderThickness="1,0,0,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
-                    <Button Grid.Column="1" 
-                            Content="{Binding ToggleExpandCollapseLabel}" 
-                            Command="{Binding ToggleExpandCollapseCommand}" 
-                            HorizontalAlignment="Right"
-                            Style="{ThemeResource AccentButtonStyle}"/>
+            <TextBlock Grid.Row="0" Text="Inspector de JSON" FontSize="16" Margin="12"/>
 
-                    <Button Grid.Column="2" Command="{Binding ToggleInspectorCommand}" Background="Transparent" BorderThickness="0" Padding="8">
-                        <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE8BB;" FontSize="12"/>
-                    </Button>
-                </Grid>
-                <ScrollViewer x:Name="InspectorScrollViewer" Grid.Row="1" Margin="0,12,0,0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-                    <muxc:TreeView x:Name="InspectorTreeView" ItemsSource="{Binding JsonTreeNodes}">
-                        <muxc:TreeView.ItemTemplate>
-                            <DataTemplate x:DataType="models:JsonPropertyNode">
-                                <muxc:TreeViewItem ItemsSource="{Binding Children}" 
-                                                   IsExpanded="{Binding DataContext.IsTreeExpanded, ElementName=RootGrid, Mode=OneWay}">
-                                    <Grid ColumnDefinitions="Auto,Auto,*" VerticalAlignment="Center">
-                                        <Button Grid.Column="0"
-                                                Style="{StaticResource CopyButtonStyle}"
-                                                Click="CopyButton_Click"
-                                                DataContext="{Binding}"
-                                                Visibility="{Binding Value, Converter={StaticResource NullToVisibilityConverter}}"/>
-                                        <TextBlock Grid.Column="1" Text="{Binding PropertyName}" FontWeight="SemiBold" Margin="4,0,8,0" VerticalAlignment="Center"/>
-                                        <TextBox Grid.Column="2" Text="{Binding Value}" IsReadOnly="True" BorderThickness="0" TextWrapping="NoWrap" Background="Transparent" VerticalAlignment="Center"/>
-                                    </Grid>
-                                </muxc:TreeViewItem>
-                            </DataTemplate>
-                        </muxc:TreeView.ItemTemplate>
-                    </muxc:TreeView>
-                </ScrollViewer>
-            </Grid>
-        </Border>
+            <ScrollViewer Grid.Row="1" Padding="12,0">
+                <TreeView ItemsSource="{Binding JsonTreeNodes}">
+                    <TreeView.ItemTemplate>
+                        <DataTemplate x:DataType="models:JsonPropertyNode">
+                            <TreeViewItem ItemsSource="{Binding Children}" IsExpanded="{Binding IsExpanded, Mode=TwoWay}">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock>
+                                        <Run Text="{Binding PropertyName}" FontWeight="SemiBold"/>
+                                        <Run Text="{Binding Value}" Foreground="Gray"/>
+                                    </TextBlock>
+                                    <Button Content="📋" 
+                                            ToolTipService.ToolTip="Copiar valor"
+                                            Padding="4,0" 
+                                            VerticalAlignment="Center" 
+                                            Visibility="{Binding Value, Converter={StaticResource NullToVisibilityConverter}}"
+                                            Command="{Binding DataContext.CopyToClipboardCommand, ElementName=RootGrid}"
+                                            CommandParameter="{Binding Value}"/>
+                                </StackPanel>
+                            </TreeViewItem>
+                        </DataTemplate>
+                    </TreeView.ItemTemplate>
+                </TreeView>
+            </ScrollViewer>
 
-        <toolkit:GridSplitter Grid.Column="1" Width="8" ResizeBehavior="BasedOnAlignment"
-                              ResizeDirection="Auto"
-                              Background="{ThemeResource SystemControlPageBackgroundBaseLowBrush}"
-                              HorizontalAlignment="Left"
-                              Visibility="{Binding IsInspectorVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+            <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8" Padding="12" BorderThickness="0,1,0,0" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
+                <Button Content="Expandir Todo" Command="{Binding ExpandAllCommand}"/>
+                <Button Content="Colapsar Todo" Command="{Binding CollapseAllCommand}"/>
+            </StackPanel>
+        </Grid>
     </Grid>
 </Window>
