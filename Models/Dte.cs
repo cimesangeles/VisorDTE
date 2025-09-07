@@ -8,7 +8,7 @@ namespace VisorDTE.Models;
 /// Representa la estructura raíz de un Documento Tributario Electrónico (DTE).
 /// Esta clase es el modelo principal que contiene todas las secciones del JSON.
 /// </summary>
-public class Dte
+public class Dte : IDte
 {
     [JsonPropertyName("identificacion")]
     public Identificacion Identificacion { get; set; }
