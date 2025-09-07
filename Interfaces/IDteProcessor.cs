@@ -1,6 +1,5 @@
 ﻿// /Interfaces/IDteProcessor.cs
-using VisorDTE.Models;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+using VisorDTE.Models; // <-- AÑADIDO: Para encontrar la clase Dte
 
 namespace VisorDTE.Interfaces;
 
