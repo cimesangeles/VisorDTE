@@ -1,4 +1,6 @@
 ﻿using Microsoft.UI.Xaml;
+using QuestPDF.Infrastructure;
+using QuestPDF.Infrastructure;
 
 namespace VisorDTE
 {
@@ -9,6 +11,7 @@ namespace VisorDTE
         public App()
         {
             this.InitializeComponent();
+            QuestPDF.Settings.License = LicenseType.Community;
         }
 
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)

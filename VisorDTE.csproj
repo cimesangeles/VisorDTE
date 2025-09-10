@@ -41,6 +41,26 @@
 		<PackageReference Include="QuestPDF" Version="2025.7.0" />
 	</ItemGroup>
 	<ItemGroup>
+	  <None Update="Catalogs\CAT-002-TipoDocumento.ini">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Catalogs\CAT-009-TipoEstablecimiento.ini">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Catalogs\CAT-012-Departamento.ini">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Catalogs\CAT-013-Municipio.ini">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Catalogs\CAT-014-UnidadMedida.ini">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Catalogs\CAT-016-CondicionOperacion.ini">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
+	<ItemGroup>
 		<Page Update="Views\JsonNodeView.xaml">
 			<Generator>MSBuild:Compile</Generator>
 		</Page>
@@ -57,15 +77,15 @@
 		<PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
 		<GenerateTemporaryStoreCertificate>True</GenerateTemporaryStoreCertificate>
 		<GenerateAppInstallerFile>False</GenerateAppInstallerFile>
-		<AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
+		<AppxPackageSigningEnabled>False</AppxPackageSigningEnabled>
 		<AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
 		<AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
 		<AppxSymbolPackageEnabled>False</AppxSymbolPackageEnabled>
 		<GenerateTestArtifacts>True</GenerateTestArtifacts>
 		<AppxBundle>Always</AppxBundle>
 		<HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
-		<AppxPackageDir>C:\Users\siuis\source\repos\VisorDTE\bin\Sideloading\</AppxPackageDir>
-		<AppxBundlePlatforms>x64</AppxBundlePlatforms>
+		<AppxPackageDir>C:\Users\siuis\source\repos\VisorDTE\bin\Publish2\</AppxPackageDir>
+		<AppxBundlePlatforms>x86|x64|arm64</AppxBundlePlatforms>
 		<DefaultLanguage>es-SV</DefaultLanguage>
 	</PropertyGroup>
 </Project>

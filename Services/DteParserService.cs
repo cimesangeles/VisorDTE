@@ -5,25 +5,19 @@ using System.IO;
 using System.Linq;
 using System.Text.Json.Nodes;
 using VisorDTE.Interfaces;
-using VisorDTE.Models;       // <-- AÑADIDO: Para encontrar la clase Dte
+using VisorDTE.Models;
 using VisorDTE.Processors;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace VisorDTE.Services;
 
 public class DteParserService
 {
-    private readonly List<IDteProcessor> _processors;
+    private readonly List<IDteProcessor> _activeProcessors;
 
-    public DteParserService()
+    public DteParserService(List<IDteProcessor> activeProcessors)
     {
-        _processors =
-        [
-            new FacturaConsumidorFinalProcessor()
-        ];
+        _activeProcessors = activeProcessors ?? [];
     }
-
-
 
     public Dte ParseDte(string jsonContent)
     {
@@ -35,10 +29,10 @@ public class DteParserService
             throw new InvalidDataException("El JSON no contiene el campo 'tipoDte' en la sección 'identificacion'.");
         }
 
-        var processor = _processors.FirstOrDefault(p => p.HandledDteType == dteType);
+        var processor = _activeProcessors.FirstOrDefault(p => p.HandledDteType == dteType);
 
         return processor is null
-            ? throw new NotSupportedException($"El tipo de DTE '{dteType}' no es soportado. No se encontró un Add-on para procesarlo.")
+            ? throw new NotSupportedException($"El tipo de DTE '{dteType}' no es soportado. Por favor, adquiera el complemento correspondiente desde la tienda para habilitar esta funcionalidad.")
             : processor.Parse(jsonContent);
     }
 }

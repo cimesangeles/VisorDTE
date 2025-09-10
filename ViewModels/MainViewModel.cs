@@ -10,7 +10,9 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using VisorDTE.Interfaces;
 using VisorDTE.Models;
+using VisorDTE.Processors;
 using VisorDTE.Services;
 using VisorDTE.Views;
 using Windows.ApplicationModel.DataTransfer;
@@ -52,15 +54,140 @@ namespace VisorDTE.ViewModels
         public Action<bool> ExpandCollapseAllAction { get; set; }
 
         private readonly CatalogService _catalogService;
-        private readonly DteParserService _parserService;
         private readonly PdfExportService _pdfExportService;
+        private DteParserService _parserService;
+        private readonly StoreLicensingService _licensingService;
+        private readonly Dictionary<string, Func<IDteProcessor>> _availableAddons;
+
+        private bool _areServicesInitialized = false;
 
         public MainViewModel()
         {
             _catalogService = new CatalogService();
-            _parserService = new DteParserService();
             _pdfExportService = new PdfExportService();
+            _licensingService = new StoreLicensingService();
+
+            _availableAddons = new Dictionary<string, Func<IDteProcessor>>
+            {
+                { "9N123ABCDEF1", () => new ComprobanteCreditoFiscalProcessor() },
+                { "9N123ABCDEF2", () => new NotaCreditoProcessor() },
+                { "9N123ABCDEF3", () => new FacturaExportacionProcessor() }
+            };
         }
+
+        private async Task InitializeServicesAsync()
+        {
+            if (_areServicesInitialized) return;
+            await _catalogService.InitializeAsync();
+            var purchasedAddons = await _licensingService.GetPurchasedAddonIdsAsync();
+
+            var activeProcessors = new List<IDteProcessor>
+            {
+                new FacturaConsumidorFinalProcessor()
+            };
+
+            foreach (var addonId in purchasedAddons)
+            {
+                if (_availableAddons.TryGetValue(addonId, out var processorFactory))
+                {
+                    activeProcessors.Add(processorFactory());
+                }
+            }
+
+            _parserService = new DteParserService(activeProcessors);
+            _areServicesInitialized = true;
+        }
+
+        [RelayCommand]
+        private async Task OpenFilesAsync()
+        {
+            try
+            {
+                await InitializeServicesAsync();
+
+                var filePicker = new FileOpenPicker { ViewMode = PickerViewMode.List, SuggestedStartLocation = PickerLocationId.DocumentsLibrary };
+                filePicker.FileTypeFilter.Add(".json");
+                var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
+                InitializeWithWindow.Initialize(filePicker, hwnd);
+                var files = await filePicker.PickMultipleFilesAsync();
+                if (files is null || files.Count == 0) return;
+
+                _allDtes.Clear();
+                StatusText = "Cargando archivos...";
+                var fileErrors = new List<FileError>();
+                var tempDtes = new List<DteViewModel>();
+
+                foreach (var file in files)
+                {
+                    try
+                    {
+                        var jsonContent = await File.ReadAllTextAsync(file.Path);
+                        var dteModel = _parserService.ParseDte(jsonContent);
+                        var dteViewModel = await DteViewModel.CreateAsync(dteModel, _catalogService);
+                        tempDtes.Add(dteViewModel);
+                    }
+                    catch (Exception ex) { fileErrors.Add(new FileError { FileName = file.Name, ErrorMessage = ex.Message }); }
+                }
+
+                var orderedDtes = tempDtes.OrderBy(vm => vm.Dte.Identificacion.FecEmi).ThenBy(vm => vm.Dte.Identificacion.HorEmi);
+                foreach (var vm in orderedDtes) { _allDtes.Add(vm); }
+
+                FilterDtes();
+                StatusText = $"{_allDtes.Count} DTE(s) cargados correctamente.";
+
+                if (fileErrors.Count > 0)
+                {
+                    StatusText += $" {fileErrors.Count} archivo(s) con error.";
+                    await ShowErrorSummaryDialog(fileErrors);
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusText = "Error al intentar abrir archivos.";
+                await ShowErrorDialog("Ocurrió un error inesperado", $"Detalle: {ex.Message}");
+            }
+        }
+
+        // --- INICIO DE LA MODIFICACIÓN ---
+        private void PopulateChildren(object source, ObservableCollection<JsonPropertyNode> children, DteViewModel dteViewModel)
+        {
+            if (source == null) return;
+            var properties = source.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
+            foreach (var prop in properties)
+            {
+                if (prop.GetIndexParameters().Length > 0) continue;
+                var value = prop.GetValue(source);
+                if (value == null) continue;
+                var node = new JsonPropertyNode { PropertyName = prop.Name };
+                if (IsSimpleType(prop.PropertyType))
+                {
+                    // Se llama al nuevo método público del DteViewModel
+                    node.Value = dteViewModel.GetTranslatedValue(prop.Name, value.ToString());
+                }
+                else if (value is IEnumerable list && prop.PropertyType != typeof(string))
+                {
+                    foreach (var item in list)
+                    {
+                        if (item != null)
+                        {
+                            var childNode = new JsonPropertyNode { PropertyName = $"[{children.Count}]" };
+                            PopulateChildren(item, childNode.Children, dteViewModel);
+                            if (childNode.Children.Count > 0) node.Children.Add(childNode);
+                        }
+                    }
+                }
+                else
+                {
+                    PopulateChildren(value, node.Children, dteViewModel);
+                }
+                if (!string.IsNullOrEmpty(node.Value) || node.Children.Count > 0) children.Add(node);
+            }
+        }
+
+        // El método GetCatalogDescription se ha eliminado de esta clase
+        // --- FIN DE LA MODIFICACIÓN ---
+
+        #region Código sin cambios
 
         partial void OnIsInspectorVisibleChanged(bool value)
         {
@@ -97,55 +224,6 @@ namespace VisorDTE.ViewModels
             JsonTreeNodes.Add(rootNode);
         }
 
-        private void PopulateChildren(object source, ObservableCollection<JsonPropertyNode> children, DteViewModel dteViewModel)
-        {
-            if (source == null) return;
-            var properties = source.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
-            foreach (var prop in properties)
-            {
-                if (prop.GetIndexParameters().Length > 0) continue;
-                var value = prop.GetValue(source);
-                if (value == null) continue;
-                var node = new JsonPropertyNode { PropertyName = prop.Name };
-                if (IsSimpleType(prop.PropertyType))
-                {
-                    node.Value = GetCatalogDescription(prop.Name, value.ToString(), dteViewModel);
-                }
-                else if (value is IEnumerable list && prop.PropertyType != typeof(string))
-                {
-                    foreach (var item in list)
-                    {
-                        if (item != null)
-                        {
-                            var childNode = new JsonPropertyNode { PropertyName = $"[{children.Count}]" };
-                            PopulateChildren(item, childNode.Children, dteViewModel);
-                            if (childNode.Children.Count > 0) node.Children.Add(childNode);
-                        }
-                    }
-                }
-                else
-                {
-                    PopulateChildren(value, node.Children, dteViewModel);
-                }
-                if (!string.IsNullOrEmpty(node.Value) || node.Children.Count > 0) children.Add(node);
-            }
-        }
-
-        private static string GetCatalogDescription(string propertyName, string value, DteViewModel dteViewModel)
-        {
-            if (string.IsNullOrEmpty(value)) return "N/A";
-            return propertyName switch
-            {
-                "TipoDte" => dteViewModel._catalogService.GetDescription("CAT-002-TipoDocumento", value),
-                "Departamento" => dteViewModel._catalogService.GetDescription("CAT-012-Departamento", value),
-                "Municipio" => dteViewModel._catalogService.GetDescription("CAT-013-Municipio", value),
-                "CondicionOperacion" => dteViewModel._catalogService.GetDescription("CAT-016-CondicionOperacion", value),
-                "TipoEstablecimiento" => dteViewModel._catalogService.GetDescription("CAT-009-TipoEstablecimiento", value),
-                "UnidadMedida" => dteViewModel._catalogService.GetDescription("CAT-014-UnidadMedida", value),
-                _ => value
-            };
-        }
-
         private static bool IsSimpleType(Type type)
         {
             return type.IsPrimitive || type.IsEnum || type == typeof(string) || type == typeof(decimal) || type == typeof(DateTime) || type == typeof(decimal?);
@@ -162,50 +240,6 @@ namespace VisorDTE.ViewModels
         {
             IsTreeExpanded = !IsTreeExpanded;
             ExpandCollapseAllAction?.Invoke(IsTreeExpanded);
-        }
-
-        [RelayCommand]
-        private async Task OpenFilesAsync()
-        {
-            try
-            {
-                await _catalogService.InitializeAsync();
-                var filePicker = new FileOpenPicker { ViewMode = PickerViewMode.List, SuggestedStartLocation = PickerLocationId.DocumentsLibrary };
-                filePicker.FileTypeFilter.Add(".json");
-                var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
-                InitializeWithWindow.Initialize(filePicker, hwnd);
-                var files = await filePicker.PickMultipleFilesAsync();
-                if (files is null || files.Count == 0) return;
-                _allDtes.Clear();
-                StatusText = "Cargando archivos...";
-                var fileErrors = new List<FileError>();
-                var tempDtes = new List<DteViewModel>();
-                foreach (var file in files)
-                {
-                    try
-                    {
-                        var jsonContent = await File.ReadAllTextAsync(file.Path);
-                        var dteModel = _parserService.ParseDte(jsonContent);
-                        var dteViewModel = new DteViewModel(dteModel, _catalogService);
-                        tempDtes.Add(dteViewModel);
-                    }
-                    catch (Exception ex) { fileErrors.Add(new FileError { FileName = file.Name, ErrorMessage = ex.Message }); }
-                }
-                var orderedDtes = tempDtes.OrderBy(vm => vm.Dte.Identificacion.FecEmi).ThenBy(vm => vm.Dte.Identificacion.HorEmi);
-                foreach (var vm in orderedDtes) { _allDtes.Add(vm); }
-                FilterDtes();
-                StatusText = $"{_allDtes.Count} DTE(s) cargados correctamente.";
-                if (fileErrors.Count > 0)
-                {
-                    StatusText += $" {fileErrors.Count} archivo(s) con error.";
-                    await ShowErrorSummaryDialog(fileErrors);
-                }
-            }
-            catch (Exception ex)
-            {
-                StatusText = "Error al intentar abrir archivos.";
-                await ShowErrorDialog("Ocurrió un error inesperado", $"Detalle: {ex.Message}");
-            }
         }
 
         private async Task ShowErrorSummaryDialog(List<FileError> errors)
@@ -266,7 +300,6 @@ namespace VisorDTE.ViewModels
             Clipboard.SetContent(dataPackage);
         }
 
-        // --- NUEVO COMANDO PARA EL BOTÓN DE PEGAR ---
         [RelayCommand]
         private async Task PasteSearchAsync()
         {
@@ -280,5 +313,6 @@ namespace VisorDTE.ViewModels
                 }
             }
         }
+        #endregion
     }
 }
