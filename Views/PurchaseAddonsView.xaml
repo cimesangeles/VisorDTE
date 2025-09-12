@@ -1,0 +1,43 @@
+<UserControl
+    x:Class="VisorDTE.Views.PurchaseAddonsView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="using:VisorDTE.Models"
+    xmlns:converters="using:VisorDTE.Converters"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+    mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <converters:InvertedBooleanConverter x:Key="InvertedBooleanConverter"/>
+    </UserControl.Resources>
+
+    <Grid MinWidth="500" MaxHeight="400">
+        <muxc:ItemsRepeater ItemsSource="{x:Bind AvailableAddons}">
+            <muxc:ItemsRepeater.ItemTemplate>
+                <DataTemplate x:DataType="models:AddonViewModel">
+                    <Grid ColumnDefinitions="*,Auto,Auto" Padding="12" BorderBrush="{ThemeResource SystemControlBackgroundBaseLowBrush}" BorderThickness="0,0,0,1">
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,12,0">
+                            <TextBlock Text="{x:Bind Title}" FontWeight="SemiBold"/>
+                            <TextBlock Text="{x:Bind Description}" TextWrapping="Wrap" FontSize="12" Opacity="0.8"/>
+                        </StackPanel>
+                        <TextBlock Grid.Column="1" Text="{x:Bind Price}" VerticalAlignment="Center" Margin="12,0" FontWeight="SemiBold"/>
+
+                        <Button Grid.Column="2" IsEnabled="{x:Bind IsPurchased, Converter={StaticResource InvertedBooleanConverter}}" Command="{x:Bind PurchaseCommand}" Style="{ThemeResource AccentButtonStyle}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE719;"/>
+                                <TextBlock Text="Comprar"/>
+                            </StackPanel>
+                        </Button>
+
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" Visibility="{x:Bind IsPurchased}" VerticalAlignment="Center">
+                            <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE930;" Foreground="Green"/>
+                            <TextBlock Text="Instalado" Foreground="Green" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Grid>
+                </DataTemplate>
+            </muxc:ItemsRepeater.ItemTemplate>
+        </muxc:ItemsRepeater>
+    </Grid>
+</UserControl>

@@ -42,6 +42,7 @@
                 <AppBarSeparator/>
                 <AppBarButton Icon="PreviewLink" Label="{Binding ToggleInspectorLabel}" Command="{Binding ToggleInspectorCommand}"/>
                 <CommandBar.SecondaryCommands>
+                    <AppBarButton Icon="Shop" Label="Complementos (Add-ons)" Command="{Binding ShowPurchaseAddonsDialogCommand}"/>
                     <AppBarButton Icon="Help" Label="Acerca de..." Command="{Binding ShowAboutDialogCommand}"/>
                 </CommandBar.SecondaryCommands>
                 <CommandBar.Content>

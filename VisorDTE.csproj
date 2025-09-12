@@ -59,6 +59,9 @@
 	  <None Update="Catalogs\CAT-016-CondicionOperacion.ini">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
+	  <Page Update="Views\PurchaseAddonsView.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </Page>
 	</ItemGroup>
 	<ItemGroup>
 		<Page Update="Views\JsonNodeView.xaml">

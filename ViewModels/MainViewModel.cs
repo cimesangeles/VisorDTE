@@ -18,6 +18,9 @@ using VisorDTE.Views;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
+using Windows.Services.Store;
+
+using System.Diagnostics;
 
 namespace VisorDTE.ViewModels
 {
@@ -71,7 +74,14 @@ namespace VisorDTE.ViewModels
             {
                 { "9N123ABCDEF1", () => new ComprobanteCreditoFiscalProcessor() },
                 { "9N123ABCDEF2", () => new NotaCreditoProcessor() },
-                { "9N123ABCDEF3", () => new FacturaExportacionProcessor() }
+                { "9N123ABCDEF3", () => new FacturaExportacionProcessor() },
+                { "9N123ABCDEF4", () => new NotaRemisionProcessor() },
+                { "9N123ABCDEF5", () => new NotaDebitoProcessor() },
+                { "9N123ABCDEF6", () => new ComprobanteRetencionProcessor() },
+                { "9N123ABCDEF7", () => new ComprobanteLiquidacionProcessor() },
+                { "9N123ABCDEF8", () => new DocumentoContableLiquidacionProcessor() },
+                { "9N123ABCDEF9", () => new FacturaSujetoExcluidoProcessor() },
+                { "9N123ABCDEFA", () => new ComprobanteDonacionProcessor() }
             };
         }
 
@@ -313,6 +323,95 @@ namespace VisorDTE.ViewModels
                 }
             }
         }
+
+        [RelayCommand]
+        private async Task ShowPurchaseAddonsDialogAsync()
+        {
+            Debug.WriteLine("--- Iniciando consulta de complementos a la Tienda ---");
+            try
+            {
+                var storeContext = StoreContext.GetDefault();
+                if (storeContext == null)
+                {
+                    Debug.WriteLine("[ERROR] StoreContext.GetDefault() devolvió null.");
+                    await ShowErrorDialog("Error Crítico", "No se pudo obtener el contexto de la Tienda. Verifique que el servicio de la Tienda de Microsoft esté en ejecución.");
+                    return;
+                }
+
+                var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
+                InitializeWithWindow.Initialize(storeContext, hwnd);
+                Debug.WriteLine($"Contexto de la Tienda inicializado con el HWND: {hwnd}");
+
+                string[] productKinds = { "Durable" };
+                var filterList = new List<string>(productKinds);
+
+                Debug.WriteLine("Realizando llamada a GetAssociatedStoreProductsAsync...");
+                StoreProductQueryResult queryResult = await storeContext.GetAssociatedStoreProductsAsync(filterList);
+
+                if (queryResult.ExtendedError != null)
+                {
+                    string errorCode = $"0x{queryResult.ExtendedError.HResult:X}";
+                    string errorMessage = queryResult.ExtendedError.Message;
+
+                    Debug.WriteLine($"[ERROR] La consulta a la Tienda falló.");
+                    Debug.WriteLine($"        Código de Error: {errorCode}");
+                    Debug.WriteLine($"        Mensaje de Error: {errorMessage}");
+
+                    await ShowErrorDialog("Error de la Tienda", $"No se pudo contactar con la Microsoft Store.\nCódigo: {errorCode}\nMensaje: {errorMessage}");
+                    return;
+                }
+
+                Debug.WriteLine($"Consulta exitosa. Se encontraron {queryResult.Products.Count} productos.");
+
+                // ... (el resto del método para mostrar el diálogo continúa aquí sin cambios) ...
+                var availableAddons = new List<AddonViewModel>();
+                // ... (etc.)
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ERROR CRÍTICO] Ocurrió una excepción no controlada al consultar la tienda: {ex}");
+                await ShowErrorDialog("Error Inesperado", $"Ocurrió una excepción al procesar la solicitud a la tienda: {ex.Message}");
+            }
+        }
+
+        private async Task PurchaseAddonAsync(string storeId)
+        {
+            var storeContext = StoreContext.GetDefault();
+            var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
+            InitializeWithWindow.Initialize(storeContext, hwnd);
+
+            StorePurchaseResult result = await storeContext.RequestPurchaseAsync(storeId);
+
+            if (result.ExtendedError != null)
+            {
+                Debug.WriteLine($"Error al comprar: {result.ExtendedError.Message}");
+                await ShowErrorDialog("Error en la compra", "Ocurrió un error durante la transacción. No se te ha cobrado nada.");
+                return;
+            }
+
+            switch (result.Status)
+            {
+                case StorePurchaseStatus.Succeeded:
+                    await new ContentDialog
+                    {
+                        Title = "¡Compra completada!",
+                        Content = "Gracias por tu apoyo. La nueva funcionalidad estará disponible la próxima vez que inicies la aplicación.",
+                        CloseButtonText = "OK",
+                        XamlRoot = App.MainWindow.Content.XamlRoot
+                    }.ShowAsync();
+                    break;
+                case StorePurchaseStatus.NotPurchased:
+                    break; // El usuario canceló
+                case StorePurchaseStatus.NetworkError:
+                case StorePurchaseStatus.ServerError:
+                    await ShowErrorDialog("Error de red", "No se pudo completar la compra. Por favor, revisa tu conexión a internet e inténtalo de nuevo.");
+                    break;
+                default:
+                    await ShowErrorDialog("Error desconocido", "Ocurrió un error inesperado durante la compra.");
+                    break;
+            }
+        }
+
         #endregion
     }
 }

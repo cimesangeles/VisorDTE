@@ -43,6 +43,13 @@ public class StoreLicensingService
         purchasedAddons.Add("9N123ABCDEF1"); // Add-on para Crédito Fiscal
         purchasedAddons.Add("9N123ABCDEF2"); // Add-on para Nota de Crédito
         purchasedAddons.Add("9N123ABCDEF3"); // Add-on para Factura de Exportación
+        purchasedAddons.Add("9N123ABCDEF4"); // Nota de Remisión
+        purchasedAddons.Add("9N123ABCDEF5"); // Nota de Débito
+        purchasedAddons.Add("9N123ABCDEF6"); // Comprobante de Retención
+        purchasedAddons.Add("9N123ABCDEF7"); // Comprobante de Liquidación
+        purchasedAddons.Add("9N123ABCDEF8"); // Documento Contable de Liquidación
+        purchasedAddons.Add("9N123ABCDEF9"); // Factura de Sujeto Excluido
+        purchasedAddons.Add("9N123ABCDEFA"); // Comprobante de Donación
         System.Diagnostics.Debug.WriteLine("MODO DEBUG: Añadidos Add-ons de prueba para CCF, NC y FEX.");
 #endif
         // --- FIN DE LA MODIFICACIÓN ---
