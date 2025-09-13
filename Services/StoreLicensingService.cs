@@ -1,8 +1,13 @@
 // /Services/StoreLicensingService.cs
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Text;
 using System.Threading.Tasks;
 using Windows.Services.Store;
+using WinRT.Interop;
 
 namespace VisorDTE.Services;
 
@@ -17,43 +22,77 @@ public class StoreLicensingService
 
     public async Task<HashSet<string>> GetPurchasedAddonIdsAsync()
     {
-        var purchasedAddons = new HashSet<string>();
+        // --- MODIFICACIÓN ---
+        // Se ha eliminado el bloque #if DEBUG.
+        // Este código ahora se ejecutará tanto en modo Debug como en Release.
 
+        var log = new StringBuilder();
+        var purchasedAddons = new HashSet<string>();
         try
         {
-            StoreAppLicense appLicense = await _storeContext.GetAppLicenseAsync();
+            log.AppendLine("--- Registro de Verificación de Licencia ---");
+            log.AppendLine($"Fecha/Hora: {DateTime.Now}");
 
-            foreach (var addon in appLicense.AddOnLicenses)
+            _storeContext = StoreContext.GetDefault();
+            var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
+            InitializeWithWindow.Initialize(_storeContext, hwnd);
+            log.AppendLine("Paso 1: StoreContext inicializado con la ventana principal.");
+
+            string[] productKinds = { "Durable" };
+            var filterList = new List<string>(productKinds);
+
+            log.AppendLine("Paso 2: Realizando llamada a GetAssociatedStoreProductsAsync...");
+            StoreProductQueryResult queryResult = await _storeContext.GetAssociatedStoreProductsAsync(filterList);
+
+            if (queryResult.ExtendedError != null)
             {
-                StoreLicense license = addon.Value;
-                if (license.IsActive)
+                throw queryResult.ExtendedError;
+            }
+            log.AppendLine($"Paso 3: Llamada exitosa. Se encontraron {queryResult.Products.Count} productos en total.");
+
+            int foundCount = 0;
+            foreach (var product in queryResult.Products.Values)
+            {
+                if (product.IsInUserCollection)
                 {
-                    purchasedAddons.Add(license.SkuStoreId);
+                    purchasedAddons.Add(product.StoreId);
+                    log.AppendLine($"- ADDON COMPRADO DETECTADO: {product.Title} ({product.StoreId})");
+                    foundCount++;
                 }
+            }
+            log.AppendLine($"Paso 4: Verificación completa. Total de addons comprados encontrados: {foundCount}.");
+
+            // Si después de todo, no se encontraron addons, muestra el registro.
+            if (purchasedAddons.Count == 0 && queryResult.Products.Count > 0)
+            {
+                log.AppendLine("\nADVERTENCIA: Se encontraron productos en la tienda, pero ninguno figura como comprado en la colección del usuario.");
+                await ShowLicenseErrorDialog("Registro de Verificación", log.ToString());
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error al consultar la tienda: {ex.Message}");
+            string errorCode = $"0x{ex.HResult:X}";
+            log.AppendLine($"\n[EXCEPCIÓN] Ocurrió un error durante el proceso.");
+            log.AppendLine($"   Código: {errorCode}");
+            log.AppendLine($"   Mensaje: {ex.Message}");
+            await ShowLicenseErrorDialog("Error de Licencia", log.ToString());
         }
 
-        // --- INICIO DE LA MODIFICACIÓN ---
-        // Para pruebas en modo DEBUG, simulamos que los Add-ons han sido comprados.
-#if DEBUG
-        purchasedAddons.Add("9N123ABCDEF1"); // Add-on para Crédito Fiscal
-        purchasedAddons.Add("9N123ABCDEF2"); // Add-on para Nota de Crédito
-        purchasedAddons.Add("9N123ABCDEF3"); // Add-on para Factura de Exportación
-        purchasedAddons.Add("9N123ABCDEF4"); // Nota de Remisión
-        purchasedAddons.Add("9N123ABCDEF5"); // Nota de Débito
-        purchasedAddons.Add("9N123ABCDEF6"); // Comprobante de Retención
-        purchasedAddons.Add("9N123ABCDEF7"); // Comprobante de Liquidación
-        purchasedAddons.Add("9N123ABCDEF8"); // Documento Contable de Liquidación
-        purchasedAddons.Add("9N123ABCDEF9"); // Factura de Sujeto Excluido
-        purchasedAddons.Add("9N123ABCDEFA"); // Comprobante de Donación
-        System.Diagnostics.Debug.WriteLine("MODO DEBUG: Añadidos Add-ons de prueba para CCF, NC y FEX.");
-#endif
-        // --- FIN DE LA MODIFICACIÓN ---
-
         return purchasedAddons;
+    }
+
+    private async Task ShowLicenseErrorDialog(string title, string content)
+    {
+        if (App.MainWindow?.Content?.XamlRoot != null)
+        {
+            var dialog = new ContentDialog
+            {
+                Title = title,
+                Content = new ScrollViewer { Content = new TextBlock { Text = content, TextWrapping = TextWrapping.Wrap } },
+                CloseButtonText = "OK",
+                XamlRoot = App.MainWindow.Content.XamlRoot
+            };
+            await dialog.ShowAsync();
+        }
     }
 }

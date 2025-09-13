@@ -1,11 +1,13 @@
 ﻿// /ViewModels/MainViewModel.cs
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -16,16 +18,16 @@ using VisorDTE.Processors;
 using VisorDTE.Services;
 using VisorDTE.Views;
 using Windows.ApplicationModel.DataTransfer;
+using Windows.Services.Store;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
-using Windows.Services.Store;
-
-using System.Diagnostics;
 
 namespace VisorDTE.ViewModels
 {
     public partial class MainViewModel : ObservableObject
     {
+        public XamlRoot? MainXamlRoot { get; set; }
+
         [ObservableProperty]
         private ObservableCollection<DteViewModel> _dteViewModels = [];
 
@@ -38,7 +40,7 @@ namespace VisorDTE.ViewModels
         private string _searchQuery = string.Empty;
 
         [ObservableProperty]
-        private DteViewModel _selectedDte;
+        private DteViewModel? _selectedDte;
 
         [ObservableProperty]
         private ObservableCollection<JsonPropertyNode> _jsonTreeNodes = [];
@@ -54,15 +56,12 @@ namespace VisorDTE.ViewModels
 
         public string ToggleExpandCollapseLabel => IsTreeExpanded ? "Contraer Todo" : "Expandir Todo";
 
-        public Action<bool> ExpandCollapseAllAction { get; set; }
+        public Action<bool>? ExpandCollapseAllAction { get; set; }
 
         private readonly CatalogService _catalogService;
         private readonly PdfExportService _pdfExportService;
-        private DteParserService _parserService;
         private readonly StoreLicensingService _licensingService;
         private readonly Dictionary<string, Func<IDteProcessor>> _availableAddons;
-
-        private bool _areServicesInitialized = false;
 
         public MainViewModel()
         {
@@ -70,10 +69,10 @@ namespace VisorDTE.ViewModels
             _pdfExportService = new PdfExportService();
             _licensingService = new StoreLicensingService();
 
-            _availableAddons = new Dictionary<string, Func<IDteProcessor>>
+            /*_availableAddons = new Dictionary<string, Func<IDteProcessor>>
             {
-                { "9N123ABCDEF1", () => new ComprobanteCreditoFiscalProcessor() },
-                { "9N123ABCDEF2", () => new NotaCreditoProcessor() },
+                { "9P4J2RR16ZNC", () => new ComprobanteCreditoFiscalProcessor() },
+                { "9PKJRBNZ47MR", () => new NotaCreditoProcessor() },
                 { "9N123ABCDEF3", () => new FacturaExportacionProcessor() },
                 { "9N123ABCDEF4", () => new NotaRemisionProcessor() },
                 { "9N123ABCDEF5", () => new NotaDebitoProcessor() },
@@ -81,39 +80,58 @@ namespace VisorDTE.ViewModels
                 { "9N123ABCDEF7", () => new ComprobanteLiquidacionProcessor() },
                 { "9N123ABCDEF8", () => new DocumentoContableLiquidacionProcessor() },
                 { "9N123ABCDEF9", () => new FacturaSujetoExcluidoProcessor() },
-                { "9N123ABCDEFA", () => new ComprobanteDonacionProcessor() }
+                { "9P24VGPFXBVQ", () => new ComprobanteDonacionProcessor() }
+            };*/
+            _availableAddons = new Dictionary<string, Func<IDteProcessor>>
+            {
+                { "9P4J2RR16ZNC", () => new ComprobanteCreditoFiscalProcessor() },
+                { "9PKJRBNZ47MR", () => new NotaCreditoProcessor() },
+                { "9PP3715D0MVG", () => new FacturaExportacionProcessor() },
+                { "9PHC1JQZ128B", () => new NotaRemisionProcessor() },
+                { "9P27V243Q3PF", () => new NotaDebitoProcessor() },
+                { "9NXFMZVF6W70", () => new ComprobanteRetencionProcessor() },
+                { "9N4DS5MVPMHX", () => new ComprobanteLiquidacionProcessor() },
+                { "9MVQBPKT6ZSR", () => new DocumentoContableLiquidacionProcessor() },
+                { "9NTDV40T370G", () => new FacturaSujetoExcluidoProcessor() },
+                { "9P24VGPFXBVQ", () => new ComprobanteDonacionProcessor() }
             };
         }
 
-        private async Task InitializeServicesAsync()
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // Este método ahora solo crea el DteParserService bajo demanda con las licencias actuales.
+        private async Task<DteParserService> GetConfiguredParserServiceAsync()
         {
-            if (_areServicesInitialized) return;
             await _catalogService.InitializeAsync();
             var purchasedAddons = await _licensingService.GetPurchasedAddonIdsAsync();
 
             var activeProcessors = new List<IDteProcessor>
             {
-                new FacturaConsumidorFinalProcessor()
+                new FacturaConsumidorFinalProcessor() // Procesador base siempre activo
             };
 
+            Debug.WriteLine($"Licencias activas encontradas: {purchasedAddons.Count}");
             foreach (var addonId in purchasedAddons)
             {
                 if (_availableAddons.TryGetValue(addonId, out var processorFactory))
                 {
-                    activeProcessors.Add(processorFactory());
+                    Debug.WriteLine($"addonId: {addonId.ToString()}");
+                    var processor = processorFactory();
+                    activeProcessors.Add(processor);
+                    Debug.WriteLine($"Activando procesador para: {processor.DteTypeName} ({processor.HandledDteType})");
                 }
             }
 
-            _parserService = new DteParserService(activeProcessors);
-            _areServicesInitialized = true;
+            return new DteParserService(activeProcessors);
         }
+        // --- FIN DE LA MODIFICACIÓN ---
 
         [RelayCommand]
         private async Task OpenFilesAsync()
         {
             try
             {
-                await InitializeServicesAsync();
+                // Ahora creamos un parser actualizado en cada operación de apertura.
+                var parserService = await GetConfiguredParserServiceAsync();
 
                 var filePicker = new FileOpenPicker { ViewMode = PickerViewMode.List, SuggestedStartLocation = PickerLocationId.DocumentsLibrary };
                 filePicker.FileTypeFilter.Add(".json");
@@ -132,7 +150,8 @@ namespace VisorDTE.ViewModels
                     try
                     {
                         var jsonContent = await File.ReadAllTextAsync(file.Path);
-                        var dteModel = _parserService.ParseDte(jsonContent);
+                        // Usamos la instancia local del parser
+                        var dteModel = parserService.ParseDte(jsonContent);
                         var dteViewModel = await DteViewModel.CreateAsync(dteModel, _catalogService);
                         tempDtes.Add(dteViewModel);
                     }
@@ -158,7 +177,7 @@ namespace VisorDTE.ViewModels
             }
         }
 
-        // --- INICIO DE LA MODIFICACIÓN ---
+        // ... (El resto del archivo no necesita cambios) ...
         private void PopulateChildren(object source, ObservableCollection<JsonPropertyNode> children, DteViewModel dteViewModel)
         {
             if (source == null) return;
@@ -171,16 +190,16 @@ namespace VisorDTE.ViewModels
                 var node = new JsonPropertyNode { PropertyName = prop.Name };
                 if (IsSimpleType(prop.PropertyType))
                 {
-                    // Se llama al nuevo método público del DteViewModel
-                    node.Value = dteViewModel.GetTranslatedValue(prop.Name, value.ToString());
+                    node.Value = dteViewModel.GetTranslatedValue(prop.Name, value.ToString() ?? string.Empty);
                 }
                 else if (value is IEnumerable list && prop.PropertyType != typeof(string))
                 {
+                    int index = 0;
                     foreach (var item in list)
                     {
                         if (item != null)
                         {
-                            var childNode = new JsonPropertyNode { PropertyName = $"[{children.Count}]" };
+                            var childNode = new JsonPropertyNode { PropertyName = $"[{index++}]" };
                             PopulateChildren(item, childNode.Children, dteViewModel);
                             if (childNode.Children.Count > 0) node.Children.Add(childNode);
                         }
@@ -194,11 +213,6 @@ namespace VisorDTE.ViewModels
             }
         }
 
-        // El método GetCatalogDescription se ha eliminado de esta clase
-        // --- FIN DE LA MODIFICACIÓN ---
-
-        #region Código sin cambios
-
         partial void OnIsInspectorVisibleChanged(bool value)
         {
             OnPropertyChanged(nameof(ToggleInspectorLabel));
@@ -210,7 +224,7 @@ namespace VisorDTE.ViewModels
             FilterDtes();
         }
 
-        partial void OnSelectedDteChanged(DteViewModel value)
+        partial void OnSelectedDteChanged(DteViewModel? value)
         {
             BuildJsonTree(value);
             IsTreeExpanded = false;
@@ -225,7 +239,7 @@ namespace VisorDTE.ViewModels
             foreach (var vm in filtered) { DteViewModels.Add(vm); }
         }
 
-        private void BuildJsonTree(DteViewModel dteViewModel)
+        private void BuildJsonTree(DteViewModel? dteViewModel)
         {
             JsonTreeNodes.Clear();
             if (dteViewModel?.Dte == null) return;
@@ -240,10 +254,7 @@ namespace VisorDTE.ViewModels
         }
 
         [RelayCommand]
-        private void ToggleInspector()
-        {
-            IsInspectorVisible = !IsInspectorVisible;
-        }
+        private void ToggleInspector() => IsInspectorVisible = !IsInspectorVisible;
 
         [RelayCommand]
         private void ToggleExpandCollapse()
@@ -255,7 +266,7 @@ namespace VisorDTE.ViewModels
         private async Task ShowErrorSummaryDialog(List<FileError> errors)
         {
             var errorView = new ErrorSummaryView { Errors = errors, SuccessCount = _allDtes.Count };
-            var dialog = new ContentDialog { Title = "Resumen de Carga de Archivos", Content = errorView, CloseButtonText = "OK", XamlRoot = App.MainWindow.Content.XamlRoot };
+            var dialog = new ContentDialog { Title = "Resumen de Carga de Archivos", Content = errorView, CloseButtonText = "OK", XamlRoot = this.MainXamlRoot };
             await dialog.ShowAsync();
         }
 
@@ -288,16 +299,16 @@ namespace VisorDTE.ViewModels
             }
         }
 
-        private static async Task ShowErrorDialog(string title, string content)
+        private async Task ShowErrorDialog(string title, string content)
         {
-            var dialog = new ContentDialog { Title = title, Content = content, CloseButtonText = "OK", XamlRoot = App.MainWindow.Content.XamlRoot };
+            var dialog = new ContentDialog { Title = title, Content = content, CloseButtonText = "OK", XamlRoot = this.MainXamlRoot };
             await dialog.ShowAsync();
         }
 
         [RelayCommand]
-        private static async Task ShowAboutDialogAsync()
+        private async Task ShowAboutDialogAsync()
         {
-            var aboutDialog = new ContentDialog { Title = "Acerca de Visor DTE CIPS", CloseButtonText = "Cerrar", XamlRoot = App.MainWindow.Content.XamlRoot, Content = new StackPanel { Spacing = 12, Children = { new TextBlock { Text = "Visor de Documentos Tributarios Electrónicos" }, new TextBlock { Text = "Versión: 1.0.0" }, new TextBlock { Text = "© 2025 Crazy Intelligence Programming Studio (CIPS)" }, new HyperlinkButton { Content = "Soporte: cips-support@outlook.com", NavigateUri = new Uri("mailto:cips-support@outlook.com") } } } };
+            var aboutDialog = new ContentDialog { Title = "Acerca de Visor DTE CIPS", CloseButtonText = "Cerrar", XamlRoot = this.MainXamlRoot, Content = new StackPanel { Spacing = 12, Children = { new TextBlock { Text = "Visor de Documentos Tributarios Electrónicos" }, new TextBlock { Text = "Versión: 1.0.22" }, new TextBlock { Text = "© 2025 Crazy Intelligence Programming Studio (CIPS)" }, new HyperlinkButton { Content = "Soporte: cips-support@outlook.com", NavigateUri = new Uri("mailto:cips-support@outlook.com") } } } };
             await aboutDialog.ShowAsync();
         }
 
@@ -323,6 +334,8 @@ namespace VisorDTE.ViewModels
                 }
             }
         }
+
+        #region Compras en la Aplicación
 
         [RelayCommand]
         private async Task ShowPurchaseAddonsDialogAsync()
@@ -352,25 +365,58 @@ namespace VisorDTE.ViewModels
                 {
                     string errorCode = $"0x{queryResult.ExtendedError.HResult:X}";
                     string errorMessage = queryResult.ExtendedError.Message;
-
                     Debug.WriteLine($"[ERROR] La consulta a la Tienda falló.");
                     Debug.WriteLine($"        Código de Error: {errorCode}");
                     Debug.WriteLine($"        Mensaje de Error: {errorMessage}");
-
                     await ShowErrorDialog("Error de la Tienda", $"No se pudo contactar con la Microsoft Store.\nCódigo: {errorCode}\nMensaje: {errorMessage}");
                     return;
                 }
 
                 Debug.WriteLine($"Consulta exitosa. Se encontraron {queryResult.Products.Count} productos.");
-
-                // ... (el resto del método para mostrar el diálogo continúa aquí sin cambios) ...
+                Debug.WriteLine("Creando la lista de AddonViewModel...");
                 var availableAddons = new List<AddonViewModel>();
-                // ... (etc.)
+                foreach (var product in queryResult.Products.Values)
+                {
+                    availableAddons.Add(new AddonViewModel
+                    {
+                        StoreId = product.StoreId,
+                        Title = product.Title,
+                        Description = product.Description,
+                        Price = product.Price.FormattedPrice,
+                        IsPurchased = product.IsInUserCollection,
+                        PurchaseCommand = new AsyncRelayCommand(() => PurchaseAddonAsync(product.StoreId))
+                    });
+                }
+                Debug.WriteLine($"Se crearon {availableAddons.Count} ViewModels para los complementos.");
+
+                Debug.WriteLine("Creando la vista PurchaseAddonsView...");
+                var purchaseView = new PurchaseAddonsView { AvailableAddons = availableAddons };
+
+                Debug.WriteLine("Verificando el XamlRoot de la ventana principal...");
+                if (this.MainXamlRoot == null)
+                {
+                    Debug.WriteLine("[ERROR CRÍTICO] XamlRoot es null. No se puede mostrar el diálogo.");
+                    await ShowErrorDialog("Error de UI", "No se pudo encontrar el XamlRoot de la ventana principal para mostrar el diálogo.");
+                    return;
+                }
+                Debug.WriteLine("XamlRoot es válido. Creando el ContentDialog...");
+
+                var dialog = new ContentDialog
+                {
+                    Title = "Comprar Complementos",
+                    Content = purchaseView,
+                    CloseButtonText = "Cerrar",
+                    XamlRoot = this.MainXamlRoot
+                };
+
+                Debug.WriteLine("Mostrando el ContentDialog con ShowAsync...");
+                await dialog.ShowAsync();
+                Debug.WriteLine("El método ShowAsync ha finalizado. El diálogo se cerró.");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[ERROR CRÍTICO] Ocurrió una excepción no controlada al consultar la tienda: {ex}");
-                await ShowErrorDialog("Error Inesperado", $"Ocurrió una excepción al procesar la solicitud a la tienda: {ex.Message}");
+                Debug.WriteLine($"[ERROR CRÍTICO] Ocurrió una excepción no controlada: {ex}");
+                await ShowErrorDialog("Error Inesperado", $"Ocurrió una excepción: {ex.Message}");
             }
         }
 
@@ -379,16 +425,13 @@ namespace VisorDTE.ViewModels
             var storeContext = StoreContext.GetDefault();
             var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
             InitializeWithWindow.Initialize(storeContext, hwnd);
-
             StorePurchaseResult result = await storeContext.RequestPurchaseAsync(storeId);
-
             if (result.ExtendedError != null)
             {
                 Debug.WriteLine($"Error al comprar: {result.ExtendedError.Message}");
                 await ShowErrorDialog("Error en la compra", "Ocurrió un error durante la transacción. No se te ha cobrado nada.");
                 return;
             }
-
             switch (result.Status)
             {
                 case StorePurchaseStatus.Succeeded:
@@ -397,11 +440,11 @@ namespace VisorDTE.ViewModels
                         Title = "¡Compra completada!",
                         Content = "Gracias por tu apoyo. La nueva funcionalidad estará disponible la próxima vez que inicies la aplicación.",
                         CloseButtonText = "OK",
-                        XamlRoot = App.MainWindow.Content.XamlRoot
+                        XamlRoot = this.MainXamlRoot
                     }.ShowAsync();
                     break;
                 case StorePurchaseStatus.NotPurchased:
-                    break; // El usuario canceló
+                    break;
                 case StorePurchaseStatus.NetworkError:
                 case StorePurchaseStatus.ServerError:
                     await ShowErrorDialog("Error de red", "No se pudo completar la compra. Por favor, revisa tu conexión a internet e inténtalo de nuevo.");
@@ -411,7 +454,6 @@ namespace VisorDTE.ViewModels
                     break;
             }
         }
-
         #endregion
     }
 }
