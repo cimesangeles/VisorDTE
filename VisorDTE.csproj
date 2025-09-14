@@ -87,7 +87,7 @@
 		<GenerateTestArtifacts>True</GenerateTestArtifacts>
 		<AppxBundle>Always</AppxBundle>
 		<HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
-		<AppxPackageDir>C:\Users\siuis\source\repos\VisorDTE\bin\Publish2\</AppxPackageDir>
+		<AppxPackageDir>C:\Users\siuis\source\repos\VisorDTE\bin\Publish3\</AppxPackageDir>
 		<AppxBundlePlatforms>x86|x64|arm64</AppxBundlePlatforms>
 		<DefaultLanguage>es-SV</DefaultLanguage>
 	</PropertyGroup>
