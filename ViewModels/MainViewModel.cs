@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
 using VisorDTE.Interfaces;
 using VisorDTE.Models;
@@ -452,6 +453,113 @@ namespace VisorDTE.ViewModels
                 default:
                     await ShowErrorDialog("Error desconocido", "Ocurrió un error inesperado durante la compra.");
                     break;
+            }
+        }
+
+        [RelayCommand]
+        private async Task ExportF07AnexoAsync()
+        {
+            if (_allDtes.Count == 0)
+            {
+                StatusText = "No hay documentos cargados para generar un anexo.";
+                await ShowErrorDialog("No hay Datos", "Por favor, abra uno o más archivos DTE antes de generar un anexo F07.");
+                return;
+            }
+
+            var anexoSelectorDialog = new ContentDialog
+            {
+                Title = "Seleccionar Anexo F07 a Generar",
+                PrimaryButtonText = "Generar",
+                CloseButtonText = "Cancelar",
+                XamlRoot = this.MainXamlRoot
+            };
+
+            var stackPanel = new StackPanel { Spacing = 12 };
+            // Usamos el enum que creamos en el Paso 1
+            var anexo1Radio = new RadioButton { Content = "Anexo de Ventas a Consumidor Final (Facturas)", Tag = AnexoF07Type.VentasConsumidorFinal, IsChecked = true };
+            var anexo2Radio = new RadioButton { Content = "Anexo de Ventas a Contribuyentes (Crédito Fiscal)", Tag = AnexoF07Type.VentasContribuyentes };
+            stackPanel.Children.Add(anexo1Radio);
+            stackPanel.Children.Add(anexo2Radio);
+            anexoSelectorDialog.Content = stackPanel;
+
+            var result = await anexoSelectorDialog.ShowAsync();
+
+            if (result == ContentDialogResult.Primary)
+            {
+                var selectedAnexo = (anexo1Radio.IsChecked == true) ? (AnexoF07Type)anexo1Radio.Tag : (AnexoF07Type)anexo2Radio.Tag;
+                IEnumerable<DteViewModel> dtesToExport;
+
+                if (selectedAnexo == AnexoF07Type.VentasConsumidorFinal)
+                {
+                    dtesToExport = _allDtes.Where(vm => vm.Dte.Identificacion.TipoDte == "01" || vm.Dte.Identificacion.TipoDte == "11");
+                }
+                else
+                {
+                    dtesToExport = _allDtes.Where(vm => vm.Dte.Identificacion.TipoDte == "03");
+                }
+
+                if (!dtesToExport.Any())
+                {
+                    StatusText = "No se encontraron DTEs del tipo seleccionado.";
+                    await ShowErrorDialog("Sin Documentos", "No hay documentos del tipo requerido para generar el anexo seleccionado.");
+                    return;
+                }
+
+                var firstDte = dtesToExport.First().Dte;
+                var nitEmisor = firstDte.Emisor.Nit.Replace("-", "");
+                var fechaPeriodo = DateTime.Parse(firstDte.Identificacion.FecEmi);
+                var anio = fechaPeriodo.ToString("yyyy");
+                var mes = fechaPeriodo.ToString("MM");
+                var version = "14";
+
+                string defaultFileName = $"{nitEmisor}F07{anio}{mes}V{version}.csv";
+
+                var fileSaver = new FileSavePicker
+                {
+                    SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
+                    SuggestedFileName = defaultFileName
+                };
+                fileSaver.FileTypeChoices.Add("Archivo CSV", new List<string> { ".csv" });
+
+                var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
+                InitializeWithWindow.Initialize(fileSaver, hwnd);
+
+                var file = await fileSaver.PickSaveFileAsync();
+                if (file != null)
+                {
+                    StatusText = "Generando archivo CSV...";
+                    try
+                    {
+                        var csvService = new F07AnexoCsvService();
+
+                        // --- INICIO DE LA CORRECCIÓN ---
+                        byte[] csvContentBytes;
+
+                        // Se extraen los modelos DTE de los ViewModels
+                        var dteModels = dtesToExport.Select(vm => vm.Dte);
+
+                        // Se llama al método correcto según la selección del usuario
+                        if (selectedAnexo == AnexoF07Type.VentasConsumidorFinal)
+                        {
+                            csvContentBytes = await csvService.GenerateAnexoConsumidorFinalCsv(dteModels);
+                        }
+                        else
+                        {
+                            csvContentBytes = await csvService.GenerateAnexoVentasContribuyenteCsv(dteModels);
+                        }
+
+                        // Se usa WriteAllBytesAsync para escribir el contenido binario del archivo
+                        await File.WriteAllBytesAsync(file.Path, csvContentBytes);
+                        // --- FIN DE LA CORRECCIÓN ---
+
+                        StatusText = $"Anexo '{file.Name}' generado correctamente con {dtesToExport.Count()} registros.";
+                    }
+                    catch (Exception ex)
+                    {
+                        StatusText = "Error al generar el archivo CSV.";
+                        await ShowErrorDialog("Error de Exportación", $"No se pudo generar el archivo CSV.\nDetalle: {ex.Message}");
+                    }
+                }
             }
         }
         #endregion

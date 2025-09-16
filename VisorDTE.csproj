@@ -36,6 +36,7 @@
 	<ItemGroup>
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
 		<PackageReference Include="CommunityToolkit.WinUI.UI.Controls" Version="7.1.2" />
+		<PackageReference Include="CsvHelper" Version="33.1.0" />
 		<PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.4948" />
 		<PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250606001" />
 		<PackageReference Include="QuestPDF" Version="2025.7.0" />

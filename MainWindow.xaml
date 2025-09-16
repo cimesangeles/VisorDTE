@@ -46,6 +46,7 @@
             <CommandBar Grid.Row="1" DefaultLabelPosition="Right" Background="Transparent">
                 <AppBarButton Icon="OpenFile" Label="Abrir DTE" Command="{Binding OpenFilesCommand}"/>
                 <AppBarButton Icon="Save" Label="Exportar a PDF" Command="{Binding ExportToPdfCommand}"/>
+                <AppBarButton Icon="Document" Label="Anexo F07" Command="{Binding ExportF07AnexoCommand}"/>
                 <AppBarSeparator/>
                 <AppBarButton Icon="PreviewLink" Label="{Binding ToggleInspectorLabel}" Command="{Binding ToggleInspectorCommand}"/>
                 <CommandBar.SecondaryCommands>
