@@ -7,6 +7,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -20,6 +21,7 @@ using VisorDTE.Services;
 using VisorDTE.Views;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Services.Store;
+using Windows.Storage;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
 
@@ -70,19 +72,6 @@ namespace VisorDTE.ViewModels
             _pdfExportService = new PdfExportService();
             _licensingService = new StoreLicensingService();
 
-            /*_availableAddons = new Dictionary<string, Func<IDteProcessor>>
-            {
-                { "9P4J2RR16ZNC", () => new ComprobanteCreditoFiscalProcessor() },
-                { "9PKJRBNZ47MR", () => new NotaCreditoProcessor() },
-                { "9N123ABCDEF3", () => new FacturaExportacionProcessor() },
-                { "9N123ABCDEF4", () => new NotaRemisionProcessor() },
-                { "9N123ABCDEF5", () => new NotaDebitoProcessor() },
-                { "9N123ABCDEF6", () => new ComprobanteRetencionProcessor() },
-                { "9N123ABCDEF7", () => new ComprobanteLiquidacionProcessor() },
-                { "9N123ABCDEF8", () => new DocumentoContableLiquidacionProcessor() },
-                { "9N123ABCDEF9", () => new FacturaSujetoExcluidoProcessor() },
-                { "9P24VGPFXBVQ", () => new ComprobanteDonacionProcessor() }
-            };*/
             _availableAddons = new Dictionary<string, Func<IDteProcessor>>
             {
                 { "9P4J2RR16ZNC", () => new ComprobanteCreditoFiscalProcessor() },
@@ -98,8 +87,6 @@ namespace VisorDTE.ViewModels
             };
         }
 
-        // --- INICIO DE LA MODIFICACIÓN ---
-        // Este método ahora solo crea el DteParserService bajo demanda con las licencias actuales.
         private async Task<DteParserService> GetConfiguredParserServiceAsync()
         {
             await _catalogService.InitializeAsync();
@@ -124,14 +111,12 @@ namespace VisorDTE.ViewModels
 
             return new DteParserService(activeProcessors);
         }
-        // --- FIN DE LA MODIFICACIÓN ---
 
         [RelayCommand]
         private async Task OpenFilesAsync()
         {
             try
             {
-                // Ahora creamos un parser actualizado en cada operación de apertura.
                 var parserService = await GetConfiguredParserServiceAsync();
 
                 var filePicker = new FileOpenPicker { ViewMode = PickerViewMode.List, SuggestedStartLocation = PickerLocationId.DocumentsLibrary };
@@ -151,7 +136,6 @@ namespace VisorDTE.ViewModels
                     try
                     {
                         var jsonContent = await File.ReadAllTextAsync(file.Path);
-                        // Usamos la instancia local del parser
                         var dteModel = parserService.ParseDte(jsonContent);
                         var dteViewModel = await DteViewModel.CreateAsync(dteModel, _catalogService);
                         tempDtes.Add(dteViewModel);
@@ -175,42 +159,6 @@ namespace VisorDTE.ViewModels
             {
                 StatusText = "Error al intentar abrir archivos.";
                 await ShowErrorDialog("Ocurrió un error inesperado", $"Detalle: {ex.Message}");
-            }
-        }
-
-        // ... (El resto del archivo no necesita cambios) ...
-        private void PopulateChildren(object source, ObservableCollection<JsonPropertyNode> children, DteViewModel dteViewModel)
-        {
-            if (source == null) return;
-            var properties = source.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
-            foreach (var prop in properties)
-            {
-                if (prop.GetIndexParameters().Length > 0) continue;
-                var value = prop.GetValue(source);
-                if (value == null) continue;
-                var node = new JsonPropertyNode { PropertyName = prop.Name };
-                if (IsSimpleType(prop.PropertyType))
-                {
-                    node.Value = dteViewModel.GetTranslatedValue(prop.Name, value.ToString() ?? string.Empty);
-                }
-                else if (value is IEnumerable list && prop.PropertyType != typeof(string))
-                {
-                    int index = 0;
-                    foreach (var item in list)
-                    {
-                        if (item != null)
-                        {
-                            var childNode = new JsonPropertyNode { PropertyName = $"[{index++}]" };
-                            PopulateChildren(item, childNode.Children, dteViewModel);
-                            if (childNode.Children.Count > 0) node.Children.Add(childNode);
-                        }
-                    }
-                }
-                else
-                {
-                    PopulateChildren(value, node.Children, dteViewModel);
-                }
-                if (!string.IsNullOrEmpty(node.Value) || node.Children.Count > 0) children.Add(node);
             }
         }
 
@@ -249,6 +197,41 @@ namespace VisorDTE.ViewModels
             JsonTreeNodes.Add(rootNode);
         }
 
+        private void PopulateChildren(object source, ObservableCollection<JsonPropertyNode> children, DteViewModel dteViewModel)
+        {
+            if (source == null) return;
+            var properties = source.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
+            foreach (var prop in properties)
+            {
+                if (prop.GetIndexParameters().Length > 0) continue;
+                var value = prop.GetValue(source);
+                if (value == null) continue;
+                var node = new JsonPropertyNode { PropertyName = prop.Name };
+                if (IsSimpleType(prop.PropertyType))
+                {
+                    node.Value = dteViewModel.GetTranslatedValue(prop.Name, value.ToString() ?? string.Empty);
+                }
+                else if (value is IEnumerable list && prop.PropertyType != typeof(string))
+                {
+                    int index = 0;
+                    foreach (var item in list)
+                    {
+                        if (item != null)
+                        {
+                            var childNode = new JsonPropertyNode { PropertyName = $"[{index++}]" };
+                            PopulateChildren(item, childNode.Children, dteViewModel);
+                            if (childNode.Children.Count > 0) node.Children.Add(childNode);
+                        }
+                    }
+                }
+                else
+                {
+                    PopulateChildren(value, node.Children, dteViewModel);
+                }
+                if (!string.IsNullOrEmpty(node.Value) || node.Children.Count > 0) children.Add(node);
+            }
+        }
+
         private static bool IsSimpleType(Type type)
         {
             return type.IsPrimitive || type.IsEnum || type == typeof(string) || type == typeof(decimal) || type == typeof(DateTime) || type == typeof(decimal?);
@@ -267,7 +250,14 @@ namespace VisorDTE.ViewModels
         private async Task ShowErrorSummaryDialog(List<FileError> errors)
         {
             var errorView = new ErrorSummaryView { Errors = errors, SuccessCount = _allDtes.Count };
-            var dialog = new ContentDialog { Title = "Resumen de Carga de Archivos", Content = errorView, CloseButtonText = "OK", XamlRoot = this.MainXamlRoot };
+            var dialog = new ContentDialog
+            {
+                Title = "Resumen de Carga de Archivos",
+                Content = errorView,
+                CloseButtonText = "OK",
+                XamlRoot = this.MainXamlRoot,
+                RequestedTheme = App.MainRoot.RequestedTheme // <-- CORRECCIÓN
+            };
             await dialog.ShowAsync();
         }
 
@@ -302,158 +292,15 @@ namespace VisorDTE.ViewModels
 
         private async Task ShowErrorDialog(string title, string content)
         {
-            var dialog = new ContentDialog { Title = title, Content = content, CloseButtonText = "OK", XamlRoot = this.MainXamlRoot };
+            var dialog = new ContentDialog
+            {
+                Title = title,
+                Content = content,
+                CloseButtonText = "OK",
+                XamlRoot = this.MainXamlRoot,
+                RequestedTheme = App.MainRoot.RequestedTheme // <-- CORRECCIÓN
+            };
             await dialog.ShowAsync();
-        }
-
-        [RelayCommand]
-        private async Task ShowAboutDialogAsync()
-        {
-            var aboutDialog = new ContentDialog { Title = "Acerca de Visor DTE CIPS", CloseButtonText = "Cerrar", XamlRoot = this.MainXamlRoot, Content = new StackPanel { Spacing = 12, Children = { new TextBlock { Text = "Visor de Documentos Tributarios Electrónicos" }, new TextBlock { Text = "Versión: 1.0.22" }, new TextBlock { Text = "© 2025 Crazy Intelligence Programming Studio (CIPS)" }, new HyperlinkButton { Content = "Soporte: cips-support@outlook.com", NavigateUri = new Uri("mailto:cips-support@outlook.com") } } } };
-            await aboutDialog.ShowAsync();
-        }
-
-        [RelayCommand]
-        private void CopyToClipboard(string text)
-        {
-            if (string.IsNullOrEmpty(text)) return;
-            var dataPackage = new DataPackage();
-            dataPackage.SetText(text);
-            Clipboard.SetContent(dataPackage);
-        }
-
-        [RelayCommand]
-        private async Task PasteSearchAsync()
-        {
-            DataPackageView dataPackageView = Clipboard.GetContent();
-            if (dataPackageView.Contains(StandardDataFormats.Text))
-            {
-                string text = await dataPackageView.GetTextAsync();
-                if (!string.IsNullOrEmpty(text))
-                {
-                    SearchQuery = text;
-                }
-            }
-        }
-
-        #region Compras en la Aplicación
-
-        [RelayCommand]
-        private async Task ShowPurchaseAddonsDialogAsync()
-        {
-            Debug.WriteLine("--- Iniciando consulta de complementos a la Tienda ---");
-            try
-            {
-                var storeContext = StoreContext.GetDefault();
-                if (storeContext == null)
-                {
-                    Debug.WriteLine("[ERROR] StoreContext.GetDefault() devolvió null.");
-                    await ShowErrorDialog("Error Crítico", "No se pudo obtener el contexto de la Tienda. Verifique que el servicio de la Tienda de Microsoft esté en ejecución.");
-                    return;
-                }
-
-                var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
-                InitializeWithWindow.Initialize(storeContext, hwnd);
-                Debug.WriteLine($"Contexto de la Tienda inicializado con el HWND: {hwnd}");
-
-                string[] productKinds = { "Durable" };
-                var filterList = new List<string>(productKinds);
-
-                Debug.WriteLine("Realizando llamada a GetAssociatedStoreProductsAsync...");
-                StoreProductQueryResult queryResult = await storeContext.GetAssociatedStoreProductsAsync(filterList);
-
-                if (queryResult.ExtendedError != null)
-                {
-                    string errorCode = $"0x{queryResult.ExtendedError.HResult:X}";
-                    string errorMessage = queryResult.ExtendedError.Message;
-                    Debug.WriteLine($"[ERROR] La consulta a la Tienda falló.");
-                    Debug.WriteLine($"        Código de Error: {errorCode}");
-                    Debug.WriteLine($"        Mensaje de Error: {errorMessage}");
-                    await ShowErrorDialog("Error de la Tienda", $"No se pudo contactar con la Microsoft Store.\nCódigo: {errorCode}\nMensaje: {errorMessage}");
-                    return;
-                }
-
-                Debug.WriteLine($"Consulta exitosa. Se encontraron {queryResult.Products.Count} productos.");
-                Debug.WriteLine("Creando la lista de AddonViewModel...");
-                var availableAddons = new List<AddonViewModel>();
-                foreach (var product in queryResult.Products.Values)
-                {
-                    availableAddons.Add(new AddonViewModel
-                    {
-                        StoreId = product.StoreId,
-                        Title = product.Title,
-                        Description = product.Description,
-                        Price = product.Price.FormattedPrice,
-                        IsPurchased = product.IsInUserCollection,
-                        PurchaseCommand = new AsyncRelayCommand(() => PurchaseAddonAsync(product.StoreId))
-                    });
-                }
-                Debug.WriteLine($"Se crearon {availableAddons.Count} ViewModels para los complementos.");
-
-                Debug.WriteLine("Creando la vista PurchaseAddonsView...");
-                var purchaseView = new PurchaseAddonsView { AvailableAddons = availableAddons };
-
-                Debug.WriteLine("Verificando el XamlRoot de la ventana principal...");
-                if (this.MainXamlRoot == null)
-                {
-                    Debug.WriteLine("[ERROR CRÍTICO] XamlRoot es null. No se puede mostrar el diálogo.");
-                    await ShowErrorDialog("Error de UI", "No se pudo encontrar el XamlRoot de la ventana principal para mostrar el diálogo.");
-                    return;
-                }
-                Debug.WriteLine("XamlRoot es válido. Creando el ContentDialog...");
-
-                var dialog = new ContentDialog
-                {
-                    Title = "Comprar Complementos",
-                    Content = purchaseView,
-                    CloseButtonText = "Cerrar",
-                    XamlRoot = this.MainXamlRoot
-                };
-
-                Debug.WriteLine("Mostrando el ContentDialog con ShowAsync...");
-                await dialog.ShowAsync();
-                Debug.WriteLine("El método ShowAsync ha finalizado. El diálogo se cerró.");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"[ERROR CRÍTICO] Ocurrió una excepción no controlada: {ex}");
-                await ShowErrorDialog("Error Inesperado", $"Ocurrió una excepción: {ex.Message}");
-            }
-        }
-
-        private async Task PurchaseAddonAsync(string storeId)
-        {
-            var storeContext = StoreContext.GetDefault();
-            var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
-            InitializeWithWindow.Initialize(storeContext, hwnd);
-            StorePurchaseResult result = await storeContext.RequestPurchaseAsync(storeId);
-            if (result.ExtendedError != null)
-            {
-                Debug.WriteLine($"Error al comprar: {result.ExtendedError.Message}");
-                await ShowErrorDialog("Error en la compra", "Ocurrió un error durante la transacción. No se te ha cobrado nada.");
-                return;
-            }
-            switch (result.Status)
-            {
-                case StorePurchaseStatus.Succeeded:
-                    await new ContentDialog
-                    {
-                        Title = "¡Compra completada!",
-                        Content = "Gracias por tu apoyo. La nueva funcionalidad estará disponible la próxima vez que inicies la aplicación.",
-                        CloseButtonText = "OK",
-                        XamlRoot = this.MainXamlRoot
-                    }.ShowAsync();
-                    break;
-                case StorePurchaseStatus.NotPurchased:
-                    break;
-                case StorePurchaseStatus.NetworkError:
-                case StorePurchaseStatus.ServerError:
-                    await ShowErrorDialog("Error de red", "No se pudo completar la compra. Por favor, revisa tu conexión a internet e inténtalo de nuevo.");
-                    break;
-                default:
-                    await ShowErrorDialog("Error desconocido", "Ocurrió un error inesperado durante la compra.");
-                    break;
-            }
         }
 
         [RelayCommand]
@@ -471,11 +318,11 @@ namespace VisorDTE.ViewModels
                 Title = "Seleccionar Anexo F07 a Generar",
                 PrimaryButtonText = "Generar",
                 CloseButtonText = "Cancelar",
-                XamlRoot = this.MainXamlRoot
+                XamlRoot = this.MainXamlRoot,
+                RequestedTheme = App.MainRoot.RequestedTheme // <-- CORRECCIÓN
             };
 
             var stackPanel = new StackPanel { Spacing = 12 };
-            // Usamos el enum que creamos en el Paso 1
             var anexo1Radio = new RadioButton { Content = "Anexo de Ventas a Consumidor Final (Facturas)", Tag = AnexoF07Type.VentasConsumidorFinal, IsChecked = true };
             var anexo2Radio = new RadioButton { Content = "Anexo de Ventas a Contribuyentes (Crédito Fiscal)", Tag = AnexoF07Type.VentasContribuyentes };
             stackPanel.Children.Add(anexo1Radio);
@@ -531,14 +378,9 @@ namespace VisorDTE.ViewModels
                     try
                     {
                         var csvService = new F07AnexoCsvService();
-
-                        // --- INICIO DE LA CORRECCIÓN ---
                         byte[] csvContentBytes;
+                        var dteModels = dtesToExport.Select(vm => vm.Dte).Cast<Dte>();
 
-                        // Se extraen los modelos DTE de los ViewModels
-                        var dteModels = dtesToExport.Select(vm => vm.Dte);
-
-                        // Se llama al método correcto según la selección del usuario
                         if (selectedAnexo == AnexoF07Type.VentasConsumidorFinal)
                         {
                             csvContentBytes = await csvService.GenerateAnexoConsumidorFinalCsv(dteModels);
@@ -548,9 +390,7 @@ namespace VisorDTE.ViewModels
                             csvContentBytes = await csvService.GenerateAnexoVentasContribuyenteCsv(dteModels);
                         }
 
-                        // Se usa WriteAllBytesAsync para escribir el contenido binario del archivo
                         await File.WriteAllBytesAsync(file.Path, csvContentBytes);
-                        // --- FIN DE LA CORRECCIÓN ---
 
                         StatusText = $"Anexo '{file.Name}' generado correctamente con {dtesToExport.Count()} registros.";
                     }
@@ -562,6 +402,215 @@ namespace VisorDTE.ViewModels
                 }
             }
         }
+
+        #region Compras en la Aplicación
+
+        [RelayCommand]
+        private async Task ShowPurchaseAddonsDialogAsync()
+        {
+            Debug.WriteLine("--- Iniciando consulta de complementos a la Tienda ---");
+            try
+            {
+                var storeContext = StoreContext.GetDefault();
+                if (storeContext == null)
+                {
+                    await ShowErrorDialog("Error Crítico", "No se pudo obtener el contexto de la Tienda.");
+                    return;
+                }
+
+                var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
+                InitializeWithWindow.Initialize(storeContext, hwnd);
+
+                string[] productKinds = { "Durable" };
+                var filterList = new List<string>(productKinds);
+
+                StoreProductQueryResult queryResult = await storeContext.GetAssociatedStoreProductsAsync(filterList);
+
+                if (queryResult.ExtendedError != null)
+                {
+                    await ShowErrorDialog("Error de la Tienda", $"No se pudo contactar con la Microsoft Store.\nCódigo: 0x{queryResult.ExtendedError.HResult:X}");
+                    return;
+                }
+
+                var availableAddons = new List<AddonViewModel>();
+                foreach (var product in queryResult.Products.Values)
+                {
+                    availableAddons.Add(new AddonViewModel
+                    {
+                        StoreId = product.StoreId,
+                        Title = product.Title,
+                        Description = product.Description,
+                        Price = product.Price.FormattedPrice,
+                        IsPurchased = product.IsInUserCollection,
+                        PurchaseCommand = new AsyncRelayCommand(() => PurchaseAddonAsync(product.StoreId))
+                    });
+                }
+
+                var purchaseView = new PurchaseAddonsView { AvailableAddons = availableAddons };
+
+                var dialog = new ContentDialog
+                {
+                    Title = "Comprar Complementos",
+                    Content = purchaseView,
+                    CloseButtonText = "Cerrar",
+                    XamlRoot = this.MainXamlRoot,
+                    RequestedTheme = App.MainRoot.RequestedTheme // <-- CORRECCIÓN
+                };
+
+                await dialog.ShowAsync();
+            }
+            catch (Exception ex)
+            {
+                await ShowErrorDialog("Error Inesperado", $"Ocurrió una excepción: {ex.Message}");
+            }
+        }
+
+        private async Task PurchaseAddonAsync(string storeId)
+        {
+            var storeContext = StoreContext.GetDefault();
+            var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
+            InitializeWithWindow.Initialize(storeContext, hwnd);
+            StorePurchaseResult result = await storeContext.RequestPurchaseAsync(storeId);
+
+            if (result.ExtendedError != null)
+            {
+                await ShowErrorDialog("Error en la compra", "Ocurrió un error durante la transacción. No se te ha cobrado nada.");
+                return;
+            }
+
+            switch (result.Status)
+            {
+                case StorePurchaseStatus.Succeeded:
+                    await new ContentDialog
+                    {
+                        Title = "¡Compra completada!",
+                        Content = "Gracias por tu apoyo. La nueva funcionalidad estará disponible la próxima vez que inicies la aplicación.",
+                        CloseButtonText = "OK",
+                        XamlRoot = this.MainXamlRoot,
+                        RequestedTheme = App.MainRoot.RequestedTheme // <-- CORRECCIÓN
+                    }.ShowAsync();
+                    break;
+                case StorePurchaseStatus.NotPurchased:
+                    break;
+                case StorePurchaseStatus.NetworkError:
+                case StorePurchaseStatus.ServerError:
+                    await ShowErrorDialog("Error de red", "No se pudo completar la compra. Por favor, revisa tu conexión a internet e inténtalo de nuevo.");
+                    break;
+                default:
+                    await ShowErrorDialog("Error desconocido", "Ocurrió un error inesperado durante la compra.");
+                    break;
+            }
+        }
+
+        #endregion
+
+        #region Comandos de Configuración y Ayuda
+
+        [RelayCommand]
+        private async Task ShowSettingsDialogAsync()
+        {
+            var settingsDialog = new ContentDialog
+            {
+                Title = "Configuración de Tema",
+                PrimaryButtonText = "Guardar",
+                CloseButtonText = "Cancelar",
+                XamlRoot = this.MainXamlRoot,
+                RequestedTheme = App.MainRoot.RequestedTheme // <-- CORRECCIÓN
+            };
+
+            var lightRadio = new RadioButton { Content = "Claro", Tag = "Light" };
+            var darkRadio = new RadioButton { Content = "Oscuro", Tag = "Dark" };
+            var systemRadio = new RadioButton { Content = "Usar configuración del sistema", Tag = "Default" };
+
+            var savedTheme = ApplicationData.Current.LocalSettings.Values["appTheme"] as string;
+            switch (savedTheme)
+            {
+                case "Light":
+                    lightRadio.IsChecked = true;
+                    break;
+                case "Dark":
+                    darkRadio.IsChecked = true;
+                    break;
+                default:
+                    systemRadio.IsChecked = true;
+                    break;
+            }
+
+            var stackPanel = new StackPanel { Spacing = 12 };
+            stackPanel.Children.Add(lightRadio);
+            stackPanel.Children.Add(darkRadio);
+            stackPanel.Children.Add(systemRadio);
+            settingsDialog.Content = stackPanel;
+
+            var result = await settingsDialog.ShowAsync();
+
+            if (result == ContentDialogResult.Primary)
+            {
+                string selectedTheme = "Default";
+                if (lightRadio.IsChecked == true) selectedTheme = "Light";
+                if (darkRadio.IsChecked == true) selectedTheme = "Dark";
+
+                ApplicationData.Current.LocalSettings.Values["appTheme"] = selectedTheme;
+
+                App.ApplyTheme();
+            }
+        }
+
+        [RelayCommand]
+        private async Task ShowAboutDialogAsync()
+        {
+            var aboutDialog = new ContentDialog
+            {
+                Title = "Acerca de Visor DTE CIPS",
+                CloseButtonText = "Cerrar",
+                XamlRoot = this.MainXamlRoot,
+                Content = new StackPanel
+                {
+                    Spacing = 12,
+                    Children =
+                    {
+                        new TextBlock { Text = "Visor de Documentos Tributarios Electrónicos" },
+                        new TextBlock { Text = "Versión: 1.0.22" },
+                        new TextBlock { Text = "© 2025 Crazy Intelligence Programming Studio (CIPS)" },
+                        new HyperlinkButton
+                        {
+                            Content = "Soporte: cips-support@outlook.com",
+                            NavigateUri = new Uri("mailto:cips-support@outlook.com")
+                        }
+                    }
+                },
+                RequestedTheme = App.MainRoot.RequestedTheme // <-- CORRECCIÓN
+            };
+            await aboutDialog.ShowAsync();
+        }
+
+        #endregion
+
+        #region Comandos de Portapapeles
+
+        [RelayCommand]
+        private void CopyToClipboard(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return;
+            var dataPackage = new DataPackage();
+            dataPackage.SetText(text);
+            Clipboard.SetContent(dataPackage);
+        }
+
+        [RelayCommand]
+        private async Task PasteSearchAsync()
+        {
+            DataPackageView dataPackageView = Clipboard.GetContent();
+            if (dataPackageView.Contains(StandardDataFormats.Text))
+            {
+                string text = await dataPackageView.GetTextAsync();
+                if (!string.IsNullOrEmpty(text))
+                {
+                    SearchQuery = text;
+                }
+            }
+        }
+
         #endregion
     }
 }

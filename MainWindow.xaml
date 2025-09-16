@@ -12,7 +12,7 @@
     xmlns:converters="using:VisorDTE.Converters"
     xmlns:toolkit="using:CommunityToolkit.WinUI.UI.Controls">
 
-    <Grid x:Name="RootGrid" Loaded="RootGrid_Loaded">
+    <Grid x:Name="RootGrid" Loaded="RootGrid_Loaded" Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}">
         <Grid.Resources>
             <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
             <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
@@ -32,24 +32,27 @@
             </Grid.RowDefinitions>
 
             <Border Grid.Row="0"
-                Background="#3498db"
-                Margin="12,8,12,0"
+                Background="{ThemeResource SystemAccentColor}"
+                Margin="12,8,12,10"
                 CornerRadius="8">
                 <StackPanel Orientation="Horizontal" Spacing="12">
                     <Border CornerRadius="5" Margin="12">
                         <Image Source="ms-appx:///Assets/StoreLogo.png" Height="48" Width="48" VerticalAlignment="Center"/>
                     </Border>
-                    <TextBlock x:Name="HeaderTitleTextBlock" Foreground="White" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="HeaderTitleTextBlock" 
+                               Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" 
+                               FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center"/>
                 </StackPanel>
             </Border>
 
-            <CommandBar Grid.Row="1" DefaultLabelPosition="Right" Background="Transparent">
+            <CommandBar Grid.Row="1" DefaultLabelPosition="Right">
                 <AppBarButton Icon="OpenFile" Label="Abrir DTE" Command="{Binding OpenFilesCommand}"/>
                 <AppBarButton Icon="Save" Label="Exportar a PDF" Command="{Binding ExportToPdfCommand}"/>
                 <AppBarButton Icon="Document" Label="Anexo F07" Command="{Binding ExportF07AnexoCommand}"/>
                 <AppBarSeparator/>
                 <AppBarButton Icon="PreviewLink" Label="{Binding ToggleInspectorLabel}" Command="{Binding ToggleInspectorCommand}"/>
                 <CommandBar.SecondaryCommands>
+                    <AppBarButton Icon="Setting" Label="Configuración" Command="{Binding ShowSettingsDialogCommand}"/>
                     <AppBarButton Icon="Shop" Label="Complementos (Add-ons)" Command="{Binding ShowPurchaseAddonsDialogCommand}"/>
                     <AppBarButton Icon="Help" Label="Acerca de..." Command="{Binding ShowAboutDialogCommand}"/>
                 </CommandBar.SecondaryCommands>
@@ -65,15 +68,16 @@
 
             <muxc:TabView Grid.Row="2" Margin="0,-1,0,0">
                 <muxc:TabView.TabItems>
-                    <muxc:TabViewItem Header="Vista por Página">
+                    <muxc:TabViewItem Header="Vista por Página" IsClosable="False">
                         <FlipView ItemsSource="{Binding DteViewModels}" SelectedItem="{Binding SelectedDte, Mode=TwoWay}"
-                                  PointerWheelChanged="FlipView_PointerWheelChanged"
-                                  ItemTemplateSelector="{StaticResource DteTemplateSelector}"/>
+                      PointerWheelChanged="FlipView_PointerWheelChanged"
+                      ItemTemplateSelector="{StaticResource DteTemplateSelector}"/>
                     </muxc:TabViewItem>
-                    <muxc:TabViewItem Header="Documento Completo">
+
+                    <muxc:TabViewItem Header="Documento Completo" IsClosable="False">
                         <ListView ItemsSource="{Binding DteViewModels}" SelectionMode="Single"
-                                  SelectionChanged="ListView_SelectionChanged"
-                                  ItemTemplateSelector="{StaticResource DteTemplateSelector}"/>
+                      SelectionChanged="ListView_SelectionChanged"
+                      ItemTemplateSelector="{StaticResource DteTemplateSelector}"/>
                     </muxc:TabViewItem>
                 </muxc:TabView.TabItems>
             </muxc:TabView>
@@ -112,8 +116,8 @@
                                                 Click="CopyButton_Click"
                                                 DataContext="{Binding}"
                                                 Visibility="{Binding Value, Converter={StaticResource NullToVisibilityConverter}}"/>
-                                        <TextBlock Grid.Column="1" Text="{Binding PropertyName}" FontWeight="SemiBold" Margin="4,0,8,0" VerticalAlignment="Center"/>
-                                        <TextBox Grid.Column="2" Text="{Binding Value}" IsReadOnly="True" BorderThickness="0" TextWrapping="NoWrap" Background="Transparent" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding PropertyName}" FontWeight="SemiBold" Margin="4,0,8,0" VerticalAlignment="Center" Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"/>
+                                        <TextBox Grid.Column="2" Text="{Binding Value}" IsReadOnly="True" BorderThickness="0" TextWrapping="NoWrap" Background="Transparent" VerticalAlignment="Center" Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"/>
                                     </Grid>
                                 </muxc:TreeViewItem>
                             </DataTemplate>

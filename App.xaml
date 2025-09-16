@@ -4,8 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:VisorDTE"
     xmlns:converters="using:VisorDTE.Converters"
-    xmlns:views="using:VisorDTE.Views"
-    RequestedTheme="Dark">
+    xmlns:views="using:VisorDTE.Views">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -14,6 +13,7 @@
 
             <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
             <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <converters:InvertedBooleanToVisibilityConverter x:Key="InvertedBooleanToVisibilityConverter"/>
             <converters:PercentageConverter x:Key="PercentageConverter"/>
             <converters:InvertedBooleanConverter x:Key="InvertedBooleanConverter"/>
             <converters:CurrencyFormatConverter x:Key="CurrencyFormatConverter"/>
