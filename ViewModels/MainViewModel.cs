@@ -475,6 +475,7 @@ namespace VisorDTE.ViewModels
             };
 
             var stackPanel = new StackPanel { Spacing = 12 };
+            // Usamos el enum que creamos en el Paso 1
             var anexo1Radio = new RadioButton { Content = "Anexo de Ventas a Consumidor Final (Facturas)", Tag = AnexoF07Type.VentasConsumidorFinal, IsChecked = true };
             var anexo2Radio = new RadioButton { Content = "Anexo de Ventas a Contribuyentes (Crédito Fiscal)", Tag = AnexoF07Type.VentasContribuyentes };
             stackPanel.Children.Add(anexo1Radio);
@@ -490,7 +491,7 @@ namespace VisorDTE.ViewModels
 
                 if (selectedAnexo == AnexoF07Type.VentasConsumidorFinal)
                 {
-                    dtesToExport = _allDtes.Where(vm => vm.Dte.Identificacion.TipoDte == "01");
+                    dtesToExport = _allDtes.Where(vm => vm.Dte.Identificacion.TipoDte == "01" || vm.Dte.Identificacion.TipoDte == "11");
                 }
                 else
                 {
@@ -504,17 +505,14 @@ namespace VisorDTE.ViewModels
                     return;
                 }
 
-                // --- INICIO DE LA MODIFICACIÓN DE NOMENCLATURA ---
-                // Estructura: [NIT]F07[AAAA][MM]V[VER].csv
                 var firstDte = dtesToExport.First().Dte;
                 var nitEmisor = firstDte.Emisor.Nit.Replace("-", "");
                 var fechaPeriodo = DateTime.Parse(firstDte.Identificacion.FecEmi);
                 var anio = fechaPeriodo.ToString("yyyy");
                 var mes = fechaPeriodo.ToString("MM");
-                var version = "14"; // Versión 14 del formulario F07
+                var version = "14";
 
                 string defaultFileName = $"{nitEmisor}F07{anio}{mes}V{version}.csv";
-                // --- FIN DE LA MODIFICACIÓN DE NOMENCLATURA ---
 
                 var fileSaver = new FileSavePicker
                 {
@@ -533,8 +531,27 @@ namespace VisorDTE.ViewModels
                     try
                     {
                         var csvService = new F07AnexoCsvService();
-                        var csvContent = csvService.GenerateAnexoCsv(dtesToExport, selectedAnexo);
-                        await File.WriteAllTextAsync(file.Path, csvContent, Encoding.UTF8);
+
+                        // --- INICIO DE LA CORRECCIÓN ---
+                        byte[] csvContentBytes;
+
+                        // Se extraen los modelos DTE de los ViewModels
+                        var dteModels = dtesToExport.Select(vm => vm.Dte);
+
+                        // Se llama al método correcto según la selección del usuario
+                        if (selectedAnexo == AnexoF07Type.VentasConsumidorFinal)
+                        {
+                            csvContentBytes = await csvService.GenerateAnexoConsumidorFinalCsv(dteModels);
+                        }
+                        else
+                        {
+                            csvContentBytes = await csvService.GenerateAnexoVentasContribuyenteCsv(dteModels);
+                        }
+
+                        // Se usa WriteAllBytesAsync para escribir el contenido binario del archivo
+                        await File.WriteAllBytesAsync(file.Path, csvContentBytes);
+                        // --- FIN DE LA CORRECCIÓN ---
+
                         StatusText = $"Anexo '{file.Name}' generado correctamente con {dtesToExport.Count()} registros.";
                     }
                     catch (Exception ex)
