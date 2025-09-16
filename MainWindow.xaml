@@ -37,7 +37,7 @@
                 CornerRadius="8">
                 <StackPanel Orientation="Horizontal" Spacing="12">
                     <Border CornerRadius="5" Margin="12">
-                        <Image Source="ms-appx:///Assets/StoreLogo.png" Height="48" Width="48" VerticalAlignment="Center"/>
+                        <Image Source="{ThemeResource AppLogoBitmap}" Height="72" Width="72" VerticalAlignment="Center"/>
                     </Border>
                     <TextBlock x:Name="HeaderTitleTextBlock" 
                                Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" 
@@ -70,14 +70,13 @@
                 <muxc:TabView.TabItems>
                     <muxc:TabViewItem Header="Vista por Página" IsClosable="False">
                         <FlipView ItemsSource="{Binding DteViewModels}" SelectedItem="{Binding SelectedDte, Mode=TwoWay}"
-                      PointerWheelChanged="FlipView_PointerWheelChanged"
-                      ItemTemplateSelector="{StaticResource DteTemplateSelector}"/>
+                                  PointerWheelChanged="FlipView_PointerWheelChanged"
+                                  ItemTemplateSelector="{StaticResource DteTemplateSelector}"/>
                     </muxc:TabViewItem>
-
                     <muxc:TabViewItem Header="Documento Completo" IsClosable="False">
                         <ListView ItemsSource="{Binding DteViewModels}" SelectionMode="Single"
-                      SelectionChanged="ListView_SelectionChanged"
-                      ItemTemplateSelector="{StaticResource DteTemplateSelector}"/>
+                                  SelectionChanged="ListView_SelectionChanged"
+                                  ItemTemplateSelector="{StaticResource DteTemplateSelector}"/>
                     </muxc:TabViewItem>
                 </muxc:TabView.TabItems>
             </muxc:TabView>

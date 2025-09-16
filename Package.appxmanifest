@@ -17,7 +17,7 @@
   <Properties>
     <DisplayName>Visor_DTE</DisplayName>
     <PublisherDisplayName>Crazy Intelligence Programming Studio</PublisherDisplayName>
-    <Logo>Assets\StoreLogo.png</Logo>
+    <Logo>Assets\Dark\StoreLogo.png</Logo>
   </Properties>
 
   <Dependencies>
@@ -37,10 +37,10 @@
         DisplayName="Visor_DTE"
         Description="VisorDTE"
         BackgroundColor="transparent"
-        Square150x150Logo="Assets\Square150x150Logo.png"
-        Square44x44Logo="Assets\Square44x44Logo.png">
-        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" />
-        <uap:SplashScreen Image="Assets\SplashScreen.png" />
+        Square150x150Logo="Assets\Dark\Square150x150Logo.png"
+        Square44x44Logo="Assets\Dark\Square44x44Logo.png">
+        <uap:DefaultTile Wide310x150Logo="Assets\Dark\Wide310x150Logo.png"  Square71x71Logo="Assets\Dark\SmallTile.png" Square310x310Logo="Assets\Dark\LargeTile.png"/>
+        <uap:SplashScreen Image="Assets\Dark\SplashScreen.png" />
       </uap:VisualElements>
     </Application>
   </Applications>
