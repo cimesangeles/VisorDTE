@@ -10,7 +10,7 @@
   <Identity
     Name="CrazyIntelligenceProgramm.4703B7D2BF03"
     Publisher="CN=2F909CBB-055E-4443-B55D-6681513C10B8"
-    Version="1.0.23.0" />
+    Version="1.0.26.0" />
 
   <mp:PhoneIdentity PhoneProductId="a84928ae-ec0d-4c0a-8307-7c58789fdbc1" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
@@ -39,7 +39,13 @@
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Dark\Square150x150Logo.png"
         Square44x44Logo="Assets\Dark\Square44x44Logo.png">
-        <uap:DefaultTile Wide310x150Logo="Assets\Dark\Wide310x150Logo.png"  Square71x71Logo="Assets\Dark\SmallTile.png" Square310x310Logo="Assets\Dark\LargeTile.png"/>
+        <uap:DefaultTile Wide310x150Logo="Assets\Dark\Wide310x150Logo.png"  Square71x71Logo="Assets\Dark\SmallTile.png" Square310x310Logo="Assets\Dark\LargeTile.png">
+          <uap:ShowNameOnTiles>
+            <uap:ShowOn Tile="square150x150Logo"/>
+            <uap:ShowOn Tile="wide310x150Logo"/>
+            <uap:ShowOn Tile="square310x310Logo"/>
+          </uap:ShowNameOnTiles>
+        </uap:DefaultTile >
         <uap:SplashScreen Image="Assets\Dark\SplashScreen.png" />
       </uap:VisualElements>
     </Application>

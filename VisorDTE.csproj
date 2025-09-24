@@ -13,18 +13,16 @@
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
 	<ItemGroup>
-	  <Content Remove="Assets\Dark\StoreLogo.scale-100.png" />
-	  <Content Remove="Assets\Dark\StoreLogo.scale-125.png" />
-	  <Content Remove="Assets\Dark\StoreLogo.scale-150.png" />
-	  <Content Remove="Assets\Dark\StoreLogo.scale-200.png" />
-	  <Content Remove="Assets\Dark\StoreLogo.scale-400.png" />
-	  <Content Remove="Assets\Light\StoreLogo.scale-100.png" />
-	  <Content Remove="Assets\Light\StoreLogo.scale-125.png" />
-	  <Content Remove="Assets\Light\StoreLogo.scale-150.png" />
-	  <Content Remove="Assets\Light\StoreLogo.scale-200.png" />
-	  <Content Remove="Assets\Light\StoreLogo.scale-400.png" />
-	</ItemGroup>
-	<ItemGroup>
+		<None Remove="Assets\Dark\StoreLogo.scale-100.png" />
+		<None Remove="Assets\Dark\StoreLogo.scale-125.png" />
+		<None Remove="Assets\Dark\StoreLogo.scale-150.png" />
+		<None Remove="Assets\Dark\StoreLogo.scale-200.png" />
+		<None Remove="Assets\Dark\StoreLogo.scale-400.png" />
+		<None Remove="Assets\Light\StoreLogo.scale-100.png" />
+		<None Remove="Assets\Light\StoreLogo.scale-125.png" />
+		<None Remove="Assets\Light\StoreLogo.scale-150.png" />
+		<None Remove="Assets\Light\StoreLogo.scale-200.png" />
+		<None Remove="Assets\Light\StoreLogo.scale-400.png" />
 		<None Remove="Views\JsonNodeView.xaml" />
 	</ItemGroup>
 
@@ -100,7 +98,7 @@
 		<GenerateTestArtifacts>True</GenerateTestArtifacts>
 		<AppxBundle>Always</AppxBundle>
 		<HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
-		<AppxPackageDir>C:\Users\siuis\source\repos\VisorDTE\bin\Publish3\</AppxPackageDir>
+		<AppxPackageDir>C:\Users\siuis\source\repos\VisorDTE\bin\Publish4\</AppxPackageDir>
 		<AppxBundlePlatforms>x86|x64|arm64</AppxBundlePlatforms>
 		<DefaultLanguage>es-SV</DefaultLanguage>
 	</PropertyGroup>
