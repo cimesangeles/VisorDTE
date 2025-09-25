@@ -62,6 +62,9 @@ namespace VisorDTE.Models
         [JsonPropertyName("nrc")]
         public string Nrc { get; set; }
 
+        [JsonPropertyName("numDocumento")]
+        public string? NumDocumento { get; set; }
+
         [JsonPropertyName("nombre")]
         public string Nombre { get; set; }
 
@@ -202,6 +205,9 @@ namespace VisorDTE.Models
 
         [JsonPropertyName("ivaRete1")]
         public double IvaRete1 { get; set; }
+
+        [JsonPropertyName("ivaPerci1")]
+        public double IvaPerci1 { get; set; }
 
         [JsonPropertyName("reteRenta")]
         public double ReteRenta { get; set; }

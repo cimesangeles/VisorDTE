@@ -137,7 +137,9 @@ namespace VisorDTE.ViewModels
                     {
                         var jsonContent = await File.ReadAllTextAsync(file.Path);
                         var dteModel = parserService.ParseDte(jsonContent);
-                        var dteViewModel = await DteViewModel.CreateAsync(dteModel, _catalogService);
+                        // --- INICIO DE LA MODIFICACIÓN 2 ---
+                        var dteViewModel = await DteViewModel.CreateAsync(dteModel, _catalogService, CopyToClipboardCommand);
+                        // --- FIN DE LA MODIFICACIÓN 2 ---
                         tempDtes.Add(dteViewModel);
                     }
                     catch (Exception ex) { fileErrors.Add(new FileError { FileName = file.Name, ErrorMessage = ex.Message }); }
@@ -303,6 +305,10 @@ namespace VisorDTE.ViewModels
             await dialog.ShowAsync();
         }
 
+        // /ViewModels/MainViewModel.cs
+
+        // ... (código anterior del archivo) ...
+
         [RelayCommand]
         private async Task ExportF07AnexoAsync()
         {
@@ -319,30 +325,66 @@ namespace VisorDTE.ViewModels
                 PrimaryButtonText = "Generar",
                 CloseButtonText = "Cancelar",
                 XamlRoot = this.MainXamlRoot,
-                RequestedTheme = App.MainRoot.RequestedTheme // <-- CORRECCIÓN
+                RequestedTheme = App.MainRoot.RequestedTheme
             };
 
             var stackPanel = new StackPanel { Spacing = 12 };
-            var anexo1Radio = new RadioButton { Content = "Anexo de Ventas a Consumidor Final (Facturas)", Tag = AnexoF07Type.VentasConsumidorFinal, IsChecked = true };
-            var anexo2Radio = new RadioButton { Content = "Anexo de Ventas a Contribuyentes (Crédito Fiscal)", Tag = AnexoF07Type.VentasContribuyentes };
-            stackPanel.Children.Add(anexo1Radio);
-            stackPanel.Children.Add(anexo2Radio);
+            var anexoVentasCF = new RadioButton { Content = "Anexo de Ventas a Consumidor Final (Facturas)", Tag = AnexoF07Type.VentasConsumidorFinal, IsChecked = true };
+            var anexoVentasContrib = new RadioButton { Content = "Anexo de Ventas a Contribuyentes (Crédito Fiscal)", Tag = AnexoF07Type.VentasContribuyentes };
+            var anexoCompras = new RadioButton { Content = "Anexo de Compras (Crédito Fiscal Recibido)", Tag = AnexoF07Type.Compras };
+            var anexoComprasExcluidos = new RadioButton { Content = "Anexo de Compras a Sujetos Excluidos", Tag = AnexoF07Type.ComprasSujetosExcluidos };
+            var anexoRetencionRecibida = new RadioButton { Content = "Anexo de Retención 1% Recibida", Tag = AnexoF07Type.RetencionIvaRecibida };
+            var anexoAnulados = new RadioButton { Content = "Anexo de Documentos Anulados", Tag = AnexoF07Type.DocumentosAnulados };
+
+            stackPanel.Children.Add(anexoVentasCF);
+            stackPanel.Children.Add(anexoVentasContrib);
+            stackPanel.Children.Add(anexoCompras);
+            stackPanel.Children.Add(anexoComprasExcluidos);
+            stackPanel.Children.Add(anexoRetencionRecibida);
+            stackPanel.Children.Add(anexoAnulados);
             anexoSelectorDialog.Content = stackPanel;
 
             var result = await anexoSelectorDialog.ShowAsync();
 
             if (result == ContentDialogResult.Primary)
             {
-                var selectedAnexo = (anexo1Radio.IsChecked == true) ? (AnexoF07Type)anexo1Radio.Tag : (AnexoF07Type)anexo2Radio.Tag;
-                IEnumerable<DteViewModel> dtesToExport;
+                AnexoF07Type selectedAnexo;
+                if (anexoVentasCF.IsChecked == true) selectedAnexo = AnexoF07Type.VentasConsumidorFinal;
+                else if (anexoVentasContrib.IsChecked == true) selectedAnexo = AnexoF07Type.VentasContribuyentes;
+                else if (anexoCompras.IsChecked == true) selectedAnexo = AnexoF07Type.Compras;
+                else if (anexoComprasExcluidos.IsChecked == true) selectedAnexo = AnexoF07Type.ComprasSujetosExcluidos;
+                else if (anexoRetencionRecibida.IsChecked == true) selectedAnexo = AnexoF07Type.RetencionIvaRecibida;
+                else selectedAnexo = AnexoF07Type.DocumentosAnulados;
 
-                if (selectedAnexo == AnexoF07Type.VentasConsumidorFinal)
+                IEnumerable<DteViewModel> dtesToExport = _allDtes;
+                string anexoTypeName = "";
+
+                switch (selectedAnexo)
                 {
-                    dtesToExport = _allDtes.Where(vm => vm.Dte.Identificacion.TipoDte == "01" || vm.Dte.Identificacion.TipoDte == "11");
-                }
-                else
-                {
-                    dtesToExport = _allDtes.Where(vm => vm.Dte.Identificacion.TipoDte == "03");
+                    case AnexoF07Type.VentasConsumidorFinal:
+                        dtesToExport = _allDtes.Where(vm => vm.Dte.Identificacion.TipoDte == "01" || vm.Dte.Identificacion.TipoDte == "11");
+                        anexoTypeName = "VentasConsumidorFinal";
+                        break;
+                    case AnexoF07Type.VentasContribuyentes:
+                        dtesToExport = _allDtes.Where(vm => vm.Dte.Identificacion.TipoDte == "03");
+                        anexoTypeName = "VentasContribuyentes";
+                        break;
+                    case AnexoF07Type.Compras:
+                        dtesToExport = _allDtes.Where(vm => vm.Dte.Identificacion.TipoDte == "03" || vm.Dte.Identificacion.TipoDte == "05" || vm.Dte.Identificacion.TipoDte == "06");
+                        anexoTypeName = "Compras";
+                        break;
+                    case AnexoF07Type.DocumentosAnulados:
+                        dtesToExport = _allDtes.Where(vm => vm.HasAnnulledItems);
+                        anexoTypeName = "DocumentosAnulados";
+                        break;
+                    case AnexoF07Type.ComprasSujetosExcluidos:
+                        dtesToExport = _allDtes.Where(vm => vm.Dte.Identificacion.TipoDte == "14");
+                        anexoTypeName = "ComprasSujetosExcluidos";
+                        break;
+                    case AnexoF07Type.RetencionIvaRecibida:
+                        dtesToExport = _allDtes.Where(vm => vm.Dte.Identificacion.TipoDte == "07");
+                        anexoTypeName = "RetencionIvaRecibida";
+                        break;
                 }
 
                 if (!dtesToExport.Any())
@@ -352,14 +394,26 @@ namespace VisorDTE.ViewModels
                     return;
                 }
 
+                // --- INICIO DE LA MODIFICACIÓN 3 ---
                 var firstDte = dtesToExport.First().Dte;
-                var nitEmisor = firstDte.Emisor.Nit.Replace("-", "");
+                string declarantNit;
+
+                // Para anexos de ventas, el declarante es el EMISOR.
+                if (selectedAnexo == AnexoF07Type.VentasConsumidorFinal || selectedAnexo == AnexoF07Type.VentasContribuyentes)
+                {
+                    declarantNit = firstDte.Emisor?.Nit?.Replace("-", "") ?? "SIN_NIT";
+                }
+                else // Para anexos de compras o retenciones recibidas, el declarante es el RECEPTOR.
+                {
+                    declarantNit = firstDte.Receptor?.Nit?.Replace("-", "") ?? "SIN_NIT";
+                }
+
                 var fechaPeriodo = DateTime.Parse(firstDte.Identificacion.FecEmi);
                 var anio = fechaPeriodo.ToString("yyyy");
                 var mes = fechaPeriodo.ToString("MM");
-                var version = "14";
 
-                string defaultFileName = $"{nitEmisor}F07{anio}{mes}V{version}.csv";
+                string defaultFileName = $"{declarantNit}F07{anio}{mes}_{anexoTypeName}.csv";
+                // --- FIN DE LA MODIFICACIÓN 3 ---
 
                 var fileSaver = new FileSavePicker
                 {
@@ -381,13 +435,28 @@ namespace VisorDTE.ViewModels
                         byte[] csvContentBytes;
                         var dteModels = dtesToExport.Select(vm => vm.Dte).Cast<Dte>();
 
-                        if (selectedAnexo == AnexoF07Type.VentasConsumidorFinal)
+                        switch (selectedAnexo)
                         {
-                            csvContentBytes = await csvService.GenerateAnexoConsumidorFinalCsv(dteModels);
-                        }
-                        else
-                        {
-                            csvContentBytes = await csvService.GenerateAnexoVentasContribuyenteCsv(dteModels);
+                            case AnexoF07Type.VentasConsumidorFinal:
+                                csvContentBytes = await csvService.GenerateAnexoConsumidorFinalCsv(dteModels);
+                                break;
+                            case AnexoF07Type.VentasContribuyentes:
+                                csvContentBytes = await csvService.GenerateAnexoVentasContribuyenteCsv(dteModels);
+                                break;
+                            case AnexoF07Type.Compras:
+                                csvContentBytes = await csvService.GenerateAnexoComprasCsv(dteModels);
+                                break;
+                            case AnexoF07Type.DocumentosAnulados:
+                                csvContentBytes = await csvService.GenerateAnexoDocumentosAnuladosCsv(dteModels);
+                                break;
+                            case AnexoF07Type.ComprasSujetosExcluidos:
+                                csvContentBytes = await csvService.GenerateAnexoComprasSujetoExcluidoCsv(dteModels);
+                                break;
+                            case AnexoF07Type.RetencionIvaRecibida:
+                                csvContentBytes = await csvService.GenerateAnexoRetencionIvaRecibidaCsv(dteModels);
+                                break;
+                            default:
+                                throw new NotSupportedException("Tipo de anexo no soportado.");
                         }
 
                         await File.WriteAllBytesAsync(file.Path, csvContentBytes);
@@ -402,6 +471,8 @@ namespace VisorDTE.ViewModels
                 }
             }
         }
+
+        // ... (resto del archivo) ...
 
         #region Compras en la Aplicación
 
